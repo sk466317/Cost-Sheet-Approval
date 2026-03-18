@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cost Approval Form</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom CSS Excel Grid ke liye */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Print Settings for PDF */
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .toolbar, .formula-bar-container {
+                display: none !important;
+            }
+            .spreadsheet-container {
+                overflow: visible !important;
+                padding: 0 !important;
+                background-color: white !important;
+            }
+            .excel-sheet {
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+            }
+            @page { size: landscape; margin: 10mm; }
+        }
+
+        /* Ribbon / Toolbar area */
+        .toolbar {
+            background-color: #f3f2f1;
+            padding: 10px 15px;
+            border-bottom: 1px solid #d2d2d2;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .formula-bar-container {
+            display: flex;
+            align-items: center;
+            padding: 5px 15px;
+            background-color: white;
+            border-bottom: 1px solid #d2d2d2;
+        }
+
+        .formula-input {
+            flex-grow: 1;
+            border: none;
+            outline: none;
+            padding-left: 10px;
+            font-size: 14px;
+        }
+
+        /* Spreadsheet Grid */
+        .spreadsheet-container {
+            flex-grow: 1;
+            overflow: auto;
+            padding: 20px;
+            background-color: #e6e6e6;
+        }
+
+        .excel-sheet {
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 85%; /* Compact fit */
+            margin: 0 auto;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            table-layout: auto;
+        }
+
+        /* Wrap Text Enforcement */
+        th, td {
+            border: 1px solid #888;
+            padding: 6px 8px;
+            font-size: 13px;
+            vertical-align: middle;
+            white-space: pre-wrap !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            max-width: 150px; /* Forces wrap on wide content */
+        }
+
+        /* Specialized Cell Styles */
+        .title-cell {
+            background-color: #1e3a8a; /* Dark Blue */
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .label-cell {
+            background-color: #e9ecef;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .header-cell {
+            background-color: #dbeafe; /* Light Blue Excel header */
+            font-weight: bold;
+            text-align: center;
+            color: #1e3a8a;
+            line-height: 1.2;
+            font-size: 12px;
+        }
+
+        .data-cell {
+            text-align: center;
+        }
+
+        /* Editable fields */
+        td[contenteditable="true"] {
+            outline: none;
+            cursor: text;
+        }
+
+        td[contenteditable="true"]:focus, td.selected, select:focus {
+            border: 2px solid #107c41 !important;
+            box-shadow: inset 0 0 0 1px #107c41;
+        }
+
+        /* Shippers Name Box Extra Formatting */
+        .shippers-box-header {
+            background-color: #fef08a !important; /* Yellow 200 */
+            border-left: 2px solid #1e3a8a !important;
+            border-top: 2px solid #1e3a8a !important;
+            border-right: 2px solid #1e3a8a !important;
+        }
+        .shippers-box-content {
+            border-left: 2px solid #1e3a8a !important;
+            border-bottom: 2px solid #1e3a8a !important;
+            border-right: 2px solid #1e3a8a !important;
+            vertical-align: top;
+            text-align: left;
+            max-width: 250px; /* Thoda wide rakha hai wrap ke liye */
+        }
+
+        /* Button styling */
+        .btn {
+            padding: 5px 12px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background: #e1dfdd;
+        }
+
+        /* Dropdown styling */
+        select.cell-dropdown {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: transparent;
+            outline: none;
+            font-weight: bold;
+            color: #1e3a8a;
+            text-align: center;
+            cursor: pointer;
+            white-space: normal;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="text-green-700 font-bold text-xl mr-4 flex items-center gap-2">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" fill="#107c41"/><path d="M14 3v5h5v1H14v2h5v1h-5v2h5v1h-5v5h-2V3h2z" fill="#fff"/></svg>
+            Approval Form
+        </div>
+        <button class="btn" onclick="formatText('bold')">B</button>
+        <button class="btn italic" onclick="formatText('italic')">I</button>
+        <button class="btn underline" onclick="formatText('underline')">U</button>
+        
+        <div class="ml-auto flex gap-2 items-center">
+            <!-- Yahan All Records Box Linked Kiya Gaya Hai -->
+            <select id="cloudHistory" onchange="loadRecordFromDropdown()" class="border border-blue-300 rounded px-2 py-1 text-xs w-48 text-blue-900 font-bold bg-blue-50 outline-none shadow cursor-pointer">
+                <option value="">-- All Records --</option>
+            </select>
+
+            <button class="btn bg-orange-100 text-orange-800 border-orange-300 shadow" onclick="addNewTable()">➕ Add New Table</button>
+            <button class="btn bg-green-100 text-green-800 border-green-300 shadow" onclick="exportToExcel()">📊 Export Excel</button>
+            <button class="btn bg-blue-100 text-blue-800 border-blue-300 shadow" onclick="window.print()">🖨️ Print / PDF</button>
+        </div>
+    </div>
+
+    <!-- Formula Bar -->
+    <div class="formula-bar-container">
+        <div class="text-gray-500 font-bold px-3 italic border-r border-gray-300 mr-2">fx</div>
+        <input type="text" class="formula-input" id="formula-input" placeholder="Select a cell to edit its value...">
+    </div>
+
+    <!-- Grid Container -->
+    <div class="spreadsheet-container">
+        <div class="excel-sheet">
+            <!-- Single Unified Table Container -->
+            <table id="spreadsheet" class="w-full">
+                <tbody id="main_tbody">
+                    <!-- Row 1: Title + Shippers Name Header -->
+                    <tr>
+                        <td colspan="12" class="title-cell" contenteditable="true">Request for Cost Approval:: Exports (KILARAIPUR-MUNDRA)</td>
+                        <td colspan="2" class="label-cell text-right">Dated:</td>
+                        <td colspan="2" contenteditable="true" class="font-bold data-cell">17-03-2026 11:27</td>
+                        <!-- Shippers Name Box Header (Parallel to Dated) -->
+                        <td colspan="4" class="header-cell shippers-box-header uppercase">Customer List</td>
+                    </tr>
+                    <!-- Row 2: Content + Shippers Name Data (Dynamic Rowspan) -->
+                    <tr>
+                        <td colspan="4" class="label-cell">Name of the Customer</td>
+                        <td colspan="4" id="ui_customerName" contenteditable="true"></td>
+                        <td colspan="4" class="label-cell">Billing Terms</td>
+                        <td colspan="4" id="ui_billingTerms" contenteditable="true"></td>
+                        <!-- Shippers Name Content Box (Spans down dynamically) -->
+                        <td colspan="4" rowspan="10" id="shippers_content_box" contenteditable="true" class="data-cell bg-white shippers-box-content"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="label-cell">Cargo Type</td>
+                        <td colspan="4" class="data-cell" style="padding: 0;">
+                            <select id="ui_commodity" class="cell-dropdown text-gray-700">
+                                <option value="">-- Select --</option>
+                                <option value="AGRI COMMODITY">AGRI COMMODITY</option>
+                                <option value="NON-AGRI COMMODITY">NON AGRI COMMODITY</option>
+                            </select>
+                        </td>
+                        <td colspan="4" class="label-cell">Sales Person</td>
+                        <td colspan="4" class="data-cell" style="padding: 0;">
+                            <select id="ui_salesPerson" class="cell-dropdown text-gray-700">
+                                <option value="">-- Select --</option>
+                                <option value="ANURAG PANDEY">ANURAG PANDEY</option>
+                                <option value="CHIRAG RANA">CHIRAG RANA</option>
+                                <option value="HARSIMRANJEET SINGH">HARSIMRANJIT SINGH</option>
+                                <option value="KUNAL SAHI">KUNAL SAHI</option>
+                                <option value="MOHIK SHARMA">MOHIK SHARMA</option>
+                                <option value="RAJESH KUMAR">RAJESH KUMAR</option>
+                                <option value="DAMANJIT SINGH">DAMANJIT SINGH</option>
+                                <option value="RAJEEV SHARMA">RAJEEV SHARMA</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="label-cell">Offer Validity Start</td>
+                        <td colspan="4" id="ui_validityStart" contenteditable="true"></td>
+                        <td colspan="4" class="label-cell">Offer Validity End</td>
+                        <td colspan="4" id="ui_validityEnd" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="label-cell">Customer Status</td>
+                        <td colspan="4" id="ui_customerType" contenteditable="true"></td>
+                        <td colspan="4" class="label-cell">Volume Indication</td>
+                        <td colspan="4" id="ui_volMonth" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="label-cell">Payment Terms & Credit Days</td>
+                        <td colspan="4" id="ui_creditDays" contenteditable="true"></td>
+                        <td colspan="4" class="label-cell">THC Subsidy</td>
+                        <td colspan="4" id="ui_remTHC" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="label-cell">CHA Involved</td>
+                        <td colspan="4" id="ui_chaInvolved" contenteditable="true"></td>
+                        <td colspan="4" class="label-cell">THC Subsidy Claim By</td>
+                        <td colspan="4" id="ui_thcClaimBy" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="label-cell">CHA Incentive Remarks</td>
+                        <td colspan="4" id="ui_chaIncRem" contenteditable="true"></td>
+                        <td colspan="4" class="label-cell">Transport Vendor</td>
+                        <td colspan="4" id="ui_transVendor" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="label-cell">Incentive Claim By</td>
+                        <td colspan="4" id="ui_incClaimBy" contenteditable="true"></td>
+                        <td colspan="4" class="label-cell">Transport Rates</td>
+                        <td colspan="4" id="ui_transRates" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="label-cell">Forwarder involved::</td>
+                        <td colspan="4" id="ui_fwdInvolved" contenteditable="true"></td>
+                        <td colspan="4" class="label-cell">TPT Subsidy Claim By</td>
+                        <td colspan="4" id="ui_tptClaimBy" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="label-cell">Incentive Claim By::</td>
+                        <td colspan="4" id="ui_incClaimBy2" contenteditable="true"></td>
+                        <td colspan="4" class="label-cell">Special Remarks</td>
+                        <td colspan="4" id="ui_remSpecial" contenteditable="true"></td>
+                    </tr>
+                    <!-- Yahan se Dynamic Tariff Blocks inject honge -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Data Imported from Tariff Generator App
+        const CONFIG = { SHEET_ID: '1iWYD0BShhoVYOx0HLkvs8-fz53JQisjuvARFGpt9hzg' };
+        let sheetRecords = [];
+        
+        const slabs = [
+            {label:'00 MT-10 MT (20)', p:30690, m:10092},
+            {label:'10 MT-20 MT (20)', p:38720, m:12595},
+            {label:'20 MT-26 MT (20)', p:46200, m:14512},
+            {label:'26 MT-30 MT (20)', p:50820, m:15378},
+            {label:'Above 30.1 MT (20)', p:50820, m:15378},
+            {label:'Upto 20 MT (40)', p:53790, m:17275},
+            {label:'Over-20 MT (40)', p:65890, m:19425}
+        ];
+
+        const subsidyData = {
+            'FACTORY': [0,0,0,0,0,0,0],
+            'OWPL': [3200,3200,3200,3200,3200,5600,5600],
+            'PSWC': [2500,2500,2500,2500,2500,4500,4500],
+            'Double -2x20"': [0,0,0,0,0,0,0]
+        };
+
+        const lineData = {
+            'CUSTOMER':{bss:[0,0,0,0,0,0,0],rail:[0,0,0,0,0,0,0],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},
+            'MSC':{bss:[933,1161,1335,1414,1414,1548,1744],rail:[500,500,500,500,500,500,500],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},
+            'COSCO':{bss:[0,0,0,0,0,0,0],rail:[1490,2120,1900,2320,-2980,2790,2790],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},
+            'HAPAG':{bss:[933,1161,1335,1414,1414,1548,1744],rail:[600,600,600,600,600,1200,1200],wh:[2095,2095,2095,2162,4187,2550,2550],fs:[2570,2570,2570,2612,4562,3650,3650],self:[910,910,910,800,2225,700,700]},
+            'CMA CGM':{bss:[933,910,1050,1120,1120,1290,1190],rail:[500,500,500,500,500,1000,1000],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},
+            'HMM LINE':{bss:[933,1161,1335,1414,1414,1548,1744],rail:[750,750,750,750,750,1250,1250],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},
+            'MAERSK':{bss:[5964,6632,9000,9630,9630,8552,10047],rail:[933,1161,1335,1414,1414,1548,1744],wh:[-1598,-1598,-1598,-923,1102,-1576,-1576],fs:[-1123,-1123,-1123,-473,1477,-476,-476],self:[-2243,-2243,-2243,-1768,-343,-2696,-2696]},
+            'OTHER':{bss:[0,0,0,0,0,0,0],rail:[0,0,0,0,0,0,0],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]}
+        };
+        ['OOCL','SEABRIDGE','ONE LINE'].forEach(k=>lineData[k]=lineData['OTHER']);
+
+        let tableCount = 0; // Tracks number of dynamic tables
+
+        // Page Load hone par ek table generate karein aur data fetch karein
+        window.onload = () => {
+            fetchSheetData();
+        };
+
+        // --- GOOGLE SHEETS DATA FETCH LOGIC ---
+        function fetchSheetData() {
+            // Update loading status temporarily on the select box
+            const sel = document.getElementById('cloudHistory');
+            sel.innerHTML = '<option value="">-- Syncing... --</option>';
+
+            window.handleGvizResponse = function(j) {
+                if(!j || !j.table) return;
+                sheetRecords = j.table.rows.map(r => {
+                    const c = r.c;
+                    if(!c || c.length < 5) return null;
+                    const jStr = c[4]?.v || "";
+                    if(!jStr.startsWith('{')) return null;
+                    try {
+                        const parsed = JSON.parse(jStr);
+                        return {
+                            name: c[2]?.v || "UNKNOWN",
+                            parsedData: parsed 
+                        };
+                    } catch(e) { return null; }
+                }).filter(r => r !== null);
+                
+                sheetRecords.sort((a, b) => {
+                    const nameA = (a.name || "").toString();
+                    const nameB = (b.name || "").toString();
+                    return nameA.localeCompare(nameB);
+                });
+                
+                repopulateDropdowns();
+                addNewTable(); // Add default empty table after sync is complete
+            };
+            const s = document.createElement('script');
+            s.src = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=responseHandler:handleGvizResponse&tq=SELECT%20A,B,C,D,E&t=${new Date().getTime()}`;
+            document.body.appendChild(s);
+        }
+
+        function repopulateDropdowns() {
+            const sel = document.getElementById('cloudHistory');
+            sel.innerHTML = '<option value="">-- All Records --</option>';
+            sheetRecords.forEach((r, i) => {
+                // Show records (ignoring approval specific logic just to display all lists for now)
+                const isApp = (r.parsedData.isApproval === true || r.parsedData.isApproval === "true");
+                if(!isApp) { 
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.text = r.name;
+                    sel.appendChild(opt);
+                }
+            });
+        }
+
+        // --- POPULATE DATA WHEN RECORD IS SELECTED ---
+        function loadRecordFromDropdown() {
+            const index = document.getElementById('cloudHistory').value;
+            if (index === "") return;
+            const r = sheetRecords[index];
+            if (!r) return;
+            const d = r.parsedData;
+
+            // Set Top Table Fields Function
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if(el) {
+                    if(el.tagName === 'SELECT') el.value = val || "";
+                    else el.innerText = val || "";
+                }
+            };
+
+            // Mapping Headers provided by user
+            setVal('ui_customerName', d.basic?.cust);
+            setVal('ui_commodity', d.basic?.comm);
+            setVal('ui_billingTerms', d.basic?.bill);
+            setVal('ui_salesPerson', d.basic?.ver);
+            setVal('ui_customerType', d.basic?.type);
+            setVal('ui_volMonth', d.basic?.vol);
+            setVal('ui_creditDays', d.basic?.cred);
+            
+            setVal('ui_remTHC', d.remarks?.thc);
+            setVal('ui_remSpecial', d.remarks?.special);
+
+            // Transport Remarks Mapping
+            let transRem = d.transport && d.transport.length > 0 ? d.transport.map(t => t.remarks).join('\n') : '';
+            setVal('ui_transVendor', transRem);
+
+            // Incentive Remarks Mapping
+            let incRem = d.incentives && d.incentives.length > 0 ? d.incentives.map(i => i.remarks).join('\n') : '';
+            setVal('ui_chaIncRem', incRem);
+            setVal('ui_incClaimBy', incRem);
+
+            // Customer List mapping to Shippers Name Box
+            let shippersText = d.customers && d.customers.length > 0 ? d.customers.map(c => c.name).join('\n') : '';
+            setVal('shippers_content_box', shippersText);
+
+            // --- Reload Dynamic Tariff Tables ---
+            // 1. Clear old tables
+            document.querySelectorAll('tbody[id^="tariff_block_"]').forEach(el => el.remove());
+            tableCount = 0; // reset table counter
+            
+            // 2. Reset shippers box height span back to original
+            const shippersBox = document.getElementById('shippers_content_box');
+            if (shippersBox) shippersBox.rowSpan = 10;
+
+            // 3. Inject new tables based on loaded data
+            if (d.tables && d.tables.length > 0) {
+                d.tables.forEach(t => {
+                    addNewTable(); // Inject blank format table
+                    const tId = tableCount - 1; // Current table ID
+
+                    document.getElementById(`sel_type_${tId}`).value = t.tt || "FACTORY";
+                    document.getElementById(`sel_line_${tId}`).value = t.sl || "COSCO";
+                    
+                    updateColor(tId);
+
+                    // Populate row values
+                    if(t.rows) {
+                        t.rows.forEach(row => {
+                            let i = row.displayIndex;
+                            if(i !== undefined && i < 7) {
+                                const discEl = document.getElementById(`disc_${tId}_${i}`);
+                                const incEl = document.getElementById(`inc_${tId}_${i}`);
+                                const subfacEl = document.getElementById(`subfac_${tId}_${i}`);
+                                
+                                if(discEl) discEl.innerText = row.disc || 0;
+                                if(incEl) incEl.innerText = row.cha || 0; // Old CHA -> New Incentive Column
+                                if(subfacEl) subfacEl.innerText = row.sub || 0; // Old Subsidy -> New Sub Fac Column
+                            }
+                        });
+                    }
+                    updateTable(tId); // Perform calculations instantly
+                });
+            } else {
+                addNewTable(); // Provide a blank table if no tables exist in data
+            }
+        }
+        // ----------------------------------------------------
+
+        // Table Data calculation aur mapping Logic
+        function updateTable(tId) {
+            const type = document.getElementById(`sel_type_${tId}`).value;
+            const line = document.getElementById(`sel_line_${tId}`).value;
+
+            // Stream Name Update 
+            document.getElementById(`lbl_stream_${tId}`).innerText = line + "-MUNDRA";
+
+            const sData = subsidyData[type] || subsidyData['FACTORY'];
+            const lData = lineData[line] || lineData['OTHER'];
+
+            for (let i = 0; i < 7; i++) {
+                const p = slabs[i].p;
+                const m = slabs[i].m;
+                const eis = (i >= 5) ? 2000 : 1000;
+                
+                // User inputs (Editable cells)
+                const disc = parseInt(document.getElementById(`disc_${tId}_${i}`).innerText) || 0;
+                const inc = parseInt(document.getElementById(`inc_${tId}_${i}`).innerText) || 0;
+                const subfac = parseInt(document.getElementById(`subfac_${tId}_${i}`).innerText) || 0;
+                
+                // Line Data Mapping
+                const slb = lData.bss[i];   
+                const slr = lData.rail[i];  
+                const sub = sData[i];       
+                
+                const slw = lData.wh[i];    
+                const slf = lData.fs[i];    
+                const sls = lData.self[i];  
+
+                // Margin Calculations
+                const base_deductions = disc + inc + slb + slr + sub + subfac;
+                const margin_wh = m - base_deductions - slw;
+                const margin_fs = m - base_deductions - slf;
+                const margin_self = m - base_deductions - sls;
+
+                // Push Data into HTML tags
+                document.getElementById(`pub_${tId}_${i}`).innerText = p;
+                document.getElementById(`rm_${tId}_${i}`).innerText = m;
+                document.getElementById(`eis_${tId}_${i}`).innerText = eis;
+                
+                formatNegative(document.getElementById(`slb_${tId}_${i}`), slb);
+                formatNegative(document.getElementById(`slr_${tId}_${i}`), slr);
+                formatNegative(document.getElementById(`sub_${tId}_${i}`), sub);
+                
+                formatNegative(document.getElementById(`slw_${tId}_${i}`), slw);
+                formatNegative(document.getElementById(`slf_${tId}_${i}`), slf);
+                formatNegative(document.getElementById(`sls_${tId}_${i}`), sls);
+                
+                formatNegative(document.getElementById(`mw_${tId}_${i}`), margin_wh);
+                formatNegative(document.getElementById(`mf_${tId}_${i}`), margin_fs);
+                formatNegative(document.getElementById(`ms_${tId}_${i}`), margin_self);
+            }
+        }
+
+        // Negative values helper
+        function formatNegative(el, val) {
+            el.innerText = val;
+            if (val < 0) el.classList.add('text-red-600');
+            else el.classList.remove('text-red-600');
+        }
+
+        // Dropdown Color Update Logic (Location colors)
+        function updateColor(tId) {
+            // Type (Location) Colors
+            const typeVal = document.getElementById(`sel_type_${tId}`).value;
+            const tdType = document.getElementById(`td_type_${tId}`);
+            
+            tdType.classList.remove("bg-yellow-200", "bg-green-200", "bg-blue-200", "bg-purple-200");
+            if(typeVal === "FACTORY") tdType.classList.add("bg-yellow-200");
+            else if(typeVal === "OWPL") tdType.classList.add("bg-green-200");
+            else if(typeVal === "PSWC") tdType.classList.add("bg-blue-200");
+            else if(typeVal === "Double -2x20\"") tdType.classList.add("bg-purple-200");
+        }
+
+        // Function to Add New Tariff Table block
+        function addNewTable() {
+            const tId = tableCount++;
+            const tbody = document.getElementById('main_tbody');
+            
+            let html = `
+                <tbody id="tariff_block_${tId}">
+                <tr><td colspan="16" style="border:none; height:20px;"></td></tr>
+                <tr>
+                    <td colspan="3" class="label-cell">Shipping Line & Stream::</td>
+                    <!-- ALWAYS YELLOW DATA CELL FOR STREAM -->
+                    <td colspan="3" id="lbl_stream_${tId}" class="font-bold text-blue-900 data-cell bg-yellow-200">COSCO-MUNDRA</td>
+                    <td colspan="2" class="label-cell">Stuffing Location::</td>
+                    <td colspan="3" id="td_type_${tId}" class="data-cell bg-yellow-200" style="padding: 0;">
+                        <select id="sel_type_${tId}" onchange="updateTable(${tId}); updateColor(${tId});" class="cell-dropdown">
+                            <option value="FACTORY">FACTORY</option>
+                            <option value="OWPL">OWPL</option>
+                            <option value="PSWC">PSWC</option>
+                            <option value="Double -2x20&quot;">Double -2x20"</option>
+                        </select>
+                    </td>
+                    <td colspan="2" class="label-cell">Line:</td>
+                    <td colspan="3" class="data-cell bg-blue-50" style="padding: 0;">
+                        <select id="sel_line_${tId}" onchange="updateTable(${tId}); updateColor(${tId});" class="cell-dropdown"></select>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="header-cell" style="width: 10%">Weight Slab</td>
+                    <td class="header-cell">Public Tariff<br>Rail Freight</td>
+                    <td class="header-cell">Railway Margins<br><span class="text-xs font-normal">(01-10-23) Including EIS Charges</span></td>
+                    <td class="header-cell">EIS Charges</td>
+                    <td class="header-cell">Discount from Haulage<br><span class="text-xs font-normal">(For Net billing) Amt</span></td>
+                    <td class="header-cell">Incentive<br><span class="text-xs font-normal">(CHA/FRW/SHIPPER) Amt</span></td>
+                    <td class="header-cell">Line Incentive</td>
+                    <td class="header-cell">BSS Discount</td>
+                    <td class="header-cell">Transport Subsidy<br>for OWPL/PSWC</td>
+                    <td class="header-cell">Transport Subsidy<br>Factory</td>
+                    <td class="header-cell">THC Subsidy<br>(WH Stuffing)</td>
+                    <td class="header-cell">THC Subsidy<br>(Factory)</td>
+                    <td class="header-cell">THC Subsidy<br>(Self Seal)</td>
+                    <td class="header-cell">Margin<br>(WH Stuffing)</td>
+                    <td class="header-cell">Margin<br>(Factory Stuff)</td>
+                    <td class="header-cell">Margin<br>(Self Seal)</td>
+                </tr>
+            `;
+
+            for (let i = 0; i < 7; i++) {
+                const label = slabs[i].label;
+                const rowClass = i >= 5 ? 'bg-gray-50' : '';
+                const labelClass = i >= 5 ? 'bg-gray-200' : '';
+                
+                html += `
+                <tr>
+                    <td class="label-cell text-center ${labelClass}" contenteditable="true">${label}</td>
+                    <td class="data-cell ${rowClass}" id="pub_${tId}_${i}" contenteditable="true"></td>
+                    <td class="data-cell ${rowClass}" id="rm_${tId}_${i}" contenteditable="true"></td>
+                    <td class="data-cell font-bold text-gray-700 ${rowClass}" id="eis_${tId}_${i}" contenteditable="true"></td>
+                    <td class="data-cell bg-yellow-50" id="disc_${tId}_${i}" contenteditable="true" oninput="updateTable(${tId})">0</td>
+                    <td class="data-cell bg-yellow-50" id="inc_${tId}_${i}" contenteditable="true" oninput="updateTable(${tId})">0</td>
+                    <td class="data-cell ${rowClass}" id="slb_${tId}_${i}" contenteditable="true"></td>
+                    <td class="data-cell ${rowClass}" id="slr_${tId}_${i}" contenteditable="true"></td>
+                    <td class="data-cell ${rowClass}" id="sub_${tId}_${i}" contenteditable="true"></td>
+                    <td class="data-cell bg-yellow-50" id="subfac_${tId}_${i}" contenteditable="true" oninput="updateTable(${tId})">0</td>
+                    <td class="data-cell ${rowClass}" id="slw_${tId}_${i}" contenteditable="true"></td>
+                    <td class="data-cell ${rowClass}" id="slf_${tId}_${i}" contenteditable="true"></td>
+                    <td class="data-cell ${rowClass}" id="sls_${tId}_${i}" contenteditable="true"></td>
+                    <td class="data-cell font-bold bg-gray-100" id="mw_${tId}_${i}" contenteditable="true"></td>
+                    <td class="data-cell font-bold bg-gray-100" id="mf_${tId}_${i}" contenteditable="true"></td>
+                    <td class="data-cell font-bold bg-gray-100" id="ms_${tId}_${i}" contenteditable="true"></td>
+                </tr>`;
+            }
+
+            html += `<tr><td colspan="16" style="border:none; height:15px;"></td></tr></tbody>`;
+
+            // Append to main_tbody directly
+            tbody.insertAdjacentHTML('beforeend', html);
+
+            // Shippers Box ki height dynamic expand karne ke liye rowSpan increase
+            const shippersBox = document.getElementById('shippers_content_box');
+            if(shippersBox && tableCount > 1) { 
+                shippersBox.rowSpan += 11; // Sirf tabhi expand karo jab 2nd table add ho rahi ho (1st par nahi)
+            }
+
+            // Populate Shipping Lines in Dropdown
+            const selLine = document.getElementById(`sel_line_${tId}`);
+            Object.keys(lineData).forEach(k => {
+                if (k !== 'CUSTOMER') {
+                    const opt = document.createElement('option');
+                    opt.value = k;
+                    opt.text = k;
+                    if (k === 'COSCO') opt.selected = true;
+                    selLine.appendChild(opt);
+                }
+            });
+
+            // Initialize values & colours
+            updateColor(tId);
+            updateTable(tId);
+        }
+
+        // --- Enter Key Event Logic (Move Cursor Down) ---
+        document.addEventListener('keydown', function(e) {
+            if(e.key === 'Enter' && e.target.tagName === 'TD' && e.target.isContentEditable) {
+                e.preventDefault(); // Stop creating a new line in the cell
+                const currentTd = e.target;
+                const currentRow = currentTd.parentElement;
+                
+                // Find column index
+                let cellIndex = Array.from(currentRow.children).indexOf(currentTd);
+                
+                // Find next row that has a cell at the same index
+                let nextRow = currentRow.nextElementSibling;
+                while(nextRow && nextRow.children.length <= cellIndex) {
+                    nextRow = nextRow.nextElementSibling;
+                }
+                
+                if(nextRow) {
+                    const nextCell = nextRow.children[cellIndex];
+                    if(nextCell && nextCell.isContentEditable) {
+                        nextCell.focus();
+                        // Select existing text so it gets overwritten automatically if typed
+                        let range = document.createRange();
+                        range.selectNodeContents(nextCell);
+                        let sel = window.getSelection();
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                    }
+                }
+            }
+        });
+
+        // --- Formula Bar Logic ---
+        let activeCell = null;
+        const formulaInput = document.getElementById('formula-input');
+        
+        document.addEventListener('click', function(e) {
+            if (e.target.tagName === 'TD' && e.target.isContentEditable) {
+                if (activeCell) activeCell.classList.remove('selected');
+                activeCell = e.target;
+                activeCell.classList.add('selected');
+                formulaInput.value = e.target.innerText;
+            }
+        });
+
+        document.addEventListener('input', function(e) {
+            if (e.target.tagName === 'TD' && e.target.isContentEditable && activeCell === e.target) {
+                formulaInput.value = e.target.innerText;
+            }
+        });
+
+        formulaInput.addEventListener('input', function() {
+            if (activeCell) {
+                activeCell.innerText = this.value;
+                // Update table logic if manual value changes
+                if (activeCell.id) {
+                    const parts = activeCell.id.split('_');
+                    if (parts.length === 3) updateTable(parts[1]); // Parts: [prefix, tId, index]
+                }
+            }
+        });
+
+        function formatText(command) {
+            document.execCommand(command, false, null);
+            if (activeCell) activeCell.focus();
+        }
+
+        // --- Export to Excel with Exact Formatting ---
+        function exportToExcel() {
+            let tableHTML = document.getElementById("spreadsheet").outerHTML;
+            let tempDiv = document.createElement('div');
+            tempDiv.innerHTML = tableHTML;
+            
+            // Replace dropdowns with their selected text before export
+            let selects = tempDiv.querySelectorAll('select');
+            selects.forEach(sel => {
+                let text = sel.options[sel.selectedIndex]?.text || "";
+                let span = document.createElement('span');
+                span.innerText = text;
+                span.style.fontWeight = "bold";
+                sel.parentNode.replaceChild(span, sel);
+            });
+            
+            // Generate clean HTML compatible with MS Excel
+            let formattedHtml = `<html xmlns:x="urn:schemas-microsoft-com:office:excel">
+                <head>
+                    <meta charset="utf-8">
+                    <style>
+                        table { border-collapse: collapse; width: 100%; margin-bottom: 20px;}
+                        td, th { border: 1px solid #888; font-size: 12px; font-family: sans-serif; text-align: center; vertical-align: middle; white-space: pre-wrap; word-wrap: break-word;}
+                        .label-cell { background-color: #e9ecef; font-weight: bold; }
+                        .header-cell { background-color: #dbeafe; font-weight: bold; color: #1e3a8a; }
+                        .shippers-box-header { background-color: #fef08a; border: 2px solid #1e3a8a; }
+                        .shippers-box-content { border: 2px solid #1e3a8a; vertical-align: top; text-align: left; }
+                        .bg-yellow-50 { background-color: #fefce8; }
+                        .bg-gray-100 { background-color: #f3f4f6; }
+                        .bg-gray-200 { background-color: #e5e7eb; }
+                        .bg-gray-50 { background-color: #f9fafb; }
+                        .bg-yellow-200 { background-color: #fef08a; }
+                        .bg-green-200 { background-color: #bbf7d0; }
+                        .bg-blue-200 { background-color: #bfdbfe; }
+                        .bg-purple-200 { background-color: #e9d5ff; }
+                        .text-red-600 { color: #dc2626; }
+                        .text-blue-900 { color: #1e3a8a; }
+                        .title-cell { background-color: #1e3a8a; color: white; font-size: 16px; font-weight: bold; }
+                    </style>
+                </head>
+                <body>${tempDiv.innerHTML}</body>
+            </html>`;
+            
+            let blob = new Blob([formattedHtml], { type: "application/vnd.ms-excel" });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement("a");
+            a.href = url;
+            a.download = "Cost_Approval_Format.xls";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
+</body>
+</html>

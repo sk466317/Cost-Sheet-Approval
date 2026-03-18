@@ -425,7 +425,7 @@
                 }
             };
 
-            // Mapping Headers provided by user
+            // Mapping Headers provided by user (Tariff Table mapping skip kar di gayi hai jaisa kaha tha)
             setVal('ui_customerName', d.basic?.cust);
             setVal('ui_commodity', d.basic?.comm);
             setVal('ui_billingTerms', d.basic?.bill);
@@ -450,46 +450,9 @@
             let shippersText = d.customers && d.customers.length > 0 ? d.customers.map(c => c.name).join('\n') : '';
             setVal('shippers_content_box', shippersText);
 
-            // --- Reload Dynamic Tariff Tables ---
-            // 1. Clear old tables
-            document.querySelectorAll('tbody[id^="tariff_block_"]').forEach(el => el.remove());
-            tableCount = 0; // reset table counter
-            
-            // 2. Reset shippers box height span back to original
-            const shippersBox = document.getElementById('shippers_content_box');
-            if (shippersBox) shippersBox.rowSpan = 10;
-
-            // 3. Inject new tables based on loaded data
-            if (d.tables && d.tables.length > 0) {
-                d.tables.forEach(t => {
-                    addNewTable(); // Inject blank format table
-                    const tId = tableCount - 1; // Current table ID
-
-                    document.getElementById(`sel_type_${tId}`).value = t.tt || "FACTORY";
-                    document.getElementById(`sel_line_${tId}`).value = t.sl || "COSCO";
-                    
-                    updateColor(tId);
-
-                    // Populate row values
-                    if(t.rows) {
-                        t.rows.forEach(row => {
-                            let i = row.displayIndex;
-                            if(i !== undefined && i < 7) {
-                                const discEl = document.getElementById(`disc_${tId}_${i}`);
-                                const incEl = document.getElementById(`inc_${tId}_${i}`);
-                                const subfacEl = document.getElementById(`subfac_${tId}_${i}`);
-                                
-                                if(discEl) discEl.innerText = row.disc || 0;
-                                if(incEl) incEl.innerText = row.cha || 0; // Old CHA -> New Incentive Column
-                                if(subfacEl) subfacEl.innerText = row.sub || 0; // Old Subsidy -> New Sub Fac Column
-                            }
-                        });
-                    }
-                    updateTable(tId); // Perform calculations instantly
-                });
-            } else {
-                addNewTable(); // Provide a blank table if no tables exist in data
-            }
+            // "Niche wali Tariff Tables ka data nahi fill karna"
+            // Isliye Tariff Tables ko populate karne wala hissa yahan add NAHI kiya gaya hai.
+            // Wo default condition mein hi rahengi.
         }
         // ----------------------------------------------------
 

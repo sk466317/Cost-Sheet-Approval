@@ -1,936 +1,2552 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cost Approval Form</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS (XLSX) library for proper .xlsx export -->
-    <script src="https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
+    <title>Import / Export Commodity Pivot Analyzer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <style>
-        /* Custom CSS Excel Grid ke liye */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f8f9fa;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-
-        /* Print Settings for PDF */
-        @media print {
-            * {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            .toolbar, .formula-bar-container {
-                display: none !important;
-            }
-            .table-delete-checkbox {
-                display: none !important;
-            }
-            .spreadsheet-container {
-                overflow: visible !important;
-                padding: 0 !important;
-                background-color: white !important;
-            }
-            .excel-sheet {
-                box-shadow: none !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                width: 100% !important;
-            }
-            @page { size: landscape; margin: 10mm; }
-        }
-
-        /* Ribbon / Toolbar area */
-        .toolbar {
-            background-color: #f3f2f1;
-            padding: 10px 15px;
-            border-bottom: 1px solid #d2d2d2;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .formula-bar-container {
-            display: flex;
-            align-items: center;
-            padding: 5px 15px;
-            background-color: white;
-            border-bottom: 1px solid #d2d2d2;
-        }
-
-        .formula-input {
-            flex-grow: 1;
-            border: none;
-            outline: none;
-            padding-left: 10px;
-            font-size: 14px;
-        }
-
-        /* Spreadsheet Grid */
-        .spreadsheet-container {
-            flex-grow: 1;
-            overflow: auto;
-            padding: 5px;
-            background-color: #e6e6e6;
-        }
-
-        .excel-sheet {
-            background-color: white;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            width: 100%;
-            margin: 0 auto;
-        }
-
-        /* FLEXBOX LAYOUT - Keeps Left and Right completely independent in height */
-        .layout-wrapper {
-            display: flex;
-            align-items: flex-start;
-            gap: 15px;
-            width: 100%;
-        }
-        .left-column {
-            flex: 0 0 78%;
-            width: 78%;
-        }
-        .right-column {
-            flex: 0 0 21%;
-            width: 21%;
-        }
-
-        table.data-table {
-            border-collapse: collapse;
-            width: 100%;
-            table-layout: fixed; 
-            margin-bottom: 20px;
-        }
-
-        /* Add spacing between dynamic tariff tables */
-        #dynamic_tables_container table.data-table {
-            margin-bottom: 30px;
-        }
-
-        /* Wrap Text Enforcement */
-        table.data-table th, table.data-table td {
-            border: 1px solid #888;
-            padding: 6px 8px;
-            font-size: 13px;
-            vertical-align: middle;
-            white-space: pre-wrap !important;
-            word-wrap: break-word !important;
-            overflow-wrap: break-word !important;
-        }
-
-        /* Specialized Cell Styles */
-        .title-cell {
-            background-color: #1e3a8a;
-            color: white;
-            font-weight: bold;
-            font-size: 16px;
-            text-align: center;
-        }
-
-        .label-cell {
-            background-color: #e9ecef;
-            font-weight: bold;
+            margin: 40px;
+            background-color: #f4f7f6;
             color: #333;
         }
-
-        .header-cell {
-            background-color: #dbeafe;
-            font-weight: bold;
+        .container {
+            max-width: 1650px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h3.date-range {
+            color: #7f8c8d;
+            font-size: 16px;
+            margin-top: 12px;
+            margin-bottom: 18px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+        .upload-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #ecf0f1;
+            border-radius: 6px;
             text-align: center;
-            color: #1e3a8a;
-            line-height: 1.2;
-            font-size: 12px;
         }
-
-        .data-cell {
-            text-align: center;
+        input[type="file"] {
+            font-size: 16px;
         }
-
-        /* Editable fields */
-        td[contenteditable="true"] {
-            outline: none;
-            cursor: text;
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 20px;
+            border: 1px solid #ddd;
         }
-
-        td[contenteditable="true"]:focus, td.selected, select:focus {
-            border: 2px solid #107c41 !important;
-            box-shadow: inset 0 0 0 1px #107c41;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            white-space: nowrap;
         }
-
-        /* Shippers Name Box Extra Formatting */
-        .shippers-box-header {
-            background-color: #fef08a !important;
-            border-left: 2px solid #1e3a8a !important;
-            border-top: 2px solid #1e3a8a !important;
-            border-right: 2px solid #1e3a8a !important;
+        th, td {
+            padding: 8px 10px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+            border-right: 1px solid #eee;
+            font-size: 13px;
         }
-        .shippers-box-content {
-            border-left: 2px solid #1e3a8a !important;
-            border-bottom: 2px solid #1e3a8a !important;
-            border-right: 2px solid #1e3a8a !important;
-            vertical-align: top;
+        th:first-child, td:first-child {
             text-align: left;
-            min-height: 360px;
-            height: 100%;
+            font-weight: 600;
+            background-color: #f9fbfd;
+            position: sticky;
+            left: 0;
+            border-right: 2px solid #3498db;
         }
-
-        /* Button styling */
+        th {
+            background-color: #ffeb3b;
+            color: #111;
+            font-weight: 600;
+        }
+        #summaryTable th:not(:first-child),
+        #summaryTable td:not(:first-child) {
+            min-width: 62px;
+        }
+        .narrow-first-col th:first-child,
+        .narrow-first-col td:first-child {
+            max-width: 180px;
+            min-width: 180px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        tr:hover td {
+            background-color: #f1f1f1;
+        }
+        tr.grand-total {
+            font-weight: bold;
+            background-color: #2c3e50;
+            color: #333;
+        }
+        tr.grand-total td {
+            background-color: #e8f4f8;
+            border-top: 2px solid #2c3e50;
+        }
+        .pct-cell {
+            color: #c0392b;
+            font-weight: 700;
+        }
+        /* Button Styles */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
         .btn {
-            padding: 5px 12px;
-            background: white;
-            border: 1px solid #ccc;
+            display: none;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            font-size: 13px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #downloadBtn {
+            background-color: #27ae60;
+        }
+        #downloadBtn:hover {
+            background-color: #219653;
+        }
+        #downloadAllBtn {
+            background-color: #1565c0;
+        }
+        #downloadAllBtn:hover {
+            background-color: #0d47a1;
+        }
+        #downloadCombinedBtn {
+            background-color: #6a1b9a;
+        }
+        #downloadCombinedBtn:hover {
+            background-color: #4a148c;
+        }
+        #downloadOtherBtn {
+            background-color: #e67e22;
+        }
+        #downloadOtherBtn:hover {
+            background-color: #d35400;
+        }
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .header-left {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .toggle-group {
+            display: flex;
+            gap: 8px;
+        }
+        .toggle-btn {
+            border: 1px solid #3498db;
+            background: #fff;
+            color: #3498db;
+            padding: 7px 12px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 13px;
-            transition: all 0.2s;
-            font-weight: bold;
+            font-weight: 700;
         }
-        .btn:hover {
-            background: #e1dfdd;
+        .toggle-btn.active {
+            background: #3498db;
+            color: #fff;
         }
-
-        /* Dropdown styling */
-        select.cell-dropdown {
-            width: 100%;
-            height: 100%;
-            border: none;
-            background-color: transparent;
-            outline: none;
-            font-weight: bold;
-            color: #1e3a8a;
-            text-align: center;
+        .upload-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+        }
+        .upload-section strong {
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+        .report-toolbar {
+            display: none;
+            margin-top: 18px;
+            padding: 16px;
+            background: #f8fafc;
+            border: 1px solid #dbe4ee;
+            border-radius: 6px;
+        }
+        .report-toolbar h4 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        .report-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .report-btn {
+            border: 1px solid #3498db;
+            background: #fff;
+            color: #3498db;
+            padding: 8px 12px;
+            border-radius: 4px;
             cursor: pointer;
-            white-space: normal;
+            font-size: 14px;
+            font-weight: 600;
         }
-        
-        /* 2nd table zoom 70% to prevent wrapping */
-        .tariff-zoom {
-            zoom: 0.7;
-            -moz-transform: scale(0.7);
-            -moz-transform-origin: left top;
-            transform-origin: left top;
+        .report-btn.active {
+            background: #3498db;
+            color: #fff;
+        }
+        .sort-btn {
+            background: transparent;
+            border: none;
+            color: inherit;
+            font: inherit;
+            font-weight: inherit;
+            cursor: pointer;
+            width: 100%;
+            text-align: inherit;
+            padding: 0;
+        }
+        .sort-indicator {
+            font-size: 11px;
+            margin-left: 4px;
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.35);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        .loading-modal {
+            width: min(420px, calc(100vw - 40px));
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.18);
+            padding: 24px;
+            text-align: center;
+        }
+        .loading-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f3b5b;
+            margin-bottom: 8px;
+        }
+        .loading-subtitle {
+            font-size: 14px;
+            color: #52667a;
+            margin-bottom: 16px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 14px;
+            background: #e7edf4;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3498db, #27ae60);
+            transition: width 0.2s ease;
+        }
+        .progress-value {
+            margin-top: 10px;
+            font-size: 28px;
+            font-weight: 800;
+            color: #2c3e50;
+        }
+        #loading {
+            display: none;
+            color: #e67e22;
+            font-weight: bold;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
 
-    <!-- Toolbar -->
-    <div class="toolbar">
-        <div class="text-green-700 font-bold text-xl mr-4 flex items-center gap-2">
-            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" fill="#107c41"/><path d="M14 3v5h5v1H14v2h5v1h-5v2h5v1h-5v5h-2V3h2z" fill="#fff"/></svg>
-            Approval Form
-        </div>
-        <button class="btn" onclick="formatText('bold')">B</button>
-        <button class="btn italic" onclick="formatText('italic')">I</button>
-        <button class="btn underline" onclick="formatText('underline')">U</button>
-        
-        <div class="ml-auto flex gap-2 items-center">
-            <span class="text-sm font-bold text-gray-700 whitespace-nowrap">Search Cost Sheet:</span>
-            <select id="cloudHistory" onchange="loadRecordFromDropdown()" class="border border-blue-300 rounded px-2 py-1 text-xs w-96 text-blue-900 font-bold bg-blue-50 outline-none shadow cursor-pointer">
-                <option value="">-- All Records --</option>
-            </select>
-
-            <button class="btn bg-orange-100 text-orange-800 border-orange-300 shadow" onclick="addNewTable()">➕ Add New Table</button>
-            <button class="btn bg-red-100 text-red-800 border-red-300 shadow" onclick="deleteSelectedTables()">🗑️ Delete Table</button>
-            <button class="btn bg-green-100 text-green-800 border-green-300 shadow" onclick="exportToExcelXLSX()">📊 Export Excel (XLSX)</button>
-            <button class="btn bg-blue-100 text-blue-800 border-blue-300 shadow" onclick="window.print()">🖨️ Print / PDF</button>
-        </div>
-    </div>
-
-    <!-- Formula Bar -->
-    <div class="formula-bar-container">
-        <div class="text-gray-500 font-bold px-3 italic border-r border-gray-300 mr-2">fx</div>
-        <input type="text" class="formula-input" id="formula-input" placeholder="Select a cell to edit its value...">
-    </div>
-
-    <!-- Grid Container -->
-    <div class="spreadsheet-container">
-        <div class="excel-sheet" id="export_container">
-            
-            <div class="layout-wrapper">
-                <!-- LEFT COLUMN (Top Info Table & Tariff Tables) -->
-                <div class="left-column">
-                    <table class="data-table" id="top_info_table">
-                        <colgroup>
-                            <col span="12" style="width: 8.33%;">
-                        </colgroup>
-                        <tbody>
-                            <tr>
-                                <td colspan="8" class="title-cell" contenteditable="true">Request for Cost Approval:: Exports (KILARAIPUR-MUNDRA)</td>
-                                <td colspan="2" class="label-cell text-right">Dated:</td>
-                                <td colspan="2" contenteditable="true" class="font-bold data-cell">17-03-2026 11:27</td>
-                            </tr>
-                            <tr>
-                                <td colspan="3" class="label-cell">Name of the Customer</td>
-                                <td colspan="3" id="ui_customerName" contenteditable="true"></td>
-                                <td colspan="3" class="label-cell">Billing Terms</td>
-                                <td colspan="3" id="ui_billingTerms" contenteditable="true"></td>
-                            </tr>
-                            <tr>
-                                <td colspan="3" class="label-cell">Cargo Type</td>
-                                <td colspan="3" class="data-cell" style="padding: 0;">
-                                    <select id="ui_commodity" class="cell-dropdown text-gray-700">
-                                        <option value="">-- Select --</option>
-                                        <option value="AGRI COMMODITY">AGRI COMMODITY</option>
-                                        <option value="NON-AGRI COMMODITY">NON AGRI COMMODITY</option>
-                                    </select>
-                                </td>
-                                <td colspan="3" class="label-cell">Sales Person</td>
-                                <td colspan="3" class="data-cell" style="padding: 0;">
-                                    <select id="ui_salesPerson" class="cell-dropdown text-gray-700">
-                                        <option value="">-- Select --</option>
-                                        <option value="ANURAG PANDEY">ANURAG PANDEY</option>
-                                        <option value="CHIRAG RANA">CHIRAG RANA</option>
-                                        <option value="HARSIMRANJEET SINGH">HARSIMRANJIT SINGH</option>
-                                        <option value="KUNAL SAHI">KUNAL SAHI</option>
-                                        <option value="MOHIK SHARMA">MOHIK SHARMA</option>
-                                        <option value="RAJESH KUMAR">RAJESH KUMAR</option>
-                                        <option value="DAMANJIT SINGH">DAMANJIT SINGH</option>
-                                        <option value="RAJEEV SHARMA">RAJEEV SHARMA</option>
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td colspan="3" class="label-cell">Offer Validity Start</td>
-                                <td colspan="3" id="ui_validityStart" contenteditable="true"></td>
-                                <td colspan="3" class="label-cell">Offer Validity End</td>
-                                <td colspan="3" id="ui_validityEnd" contenteditable="true"></td>
-                            </tr>
-                            <tr>
-                                <td colspan="3" class="label-cell">Customer Status</td>
-                                <td colspan="3" id="ui_customerType" contenteditable="true"></td>
-                                <td colspan="3" class="label-cell">Volume Indication</td>
-                                <td colspan="3" id="ui_volMonth" contenteditable="true"></td>
-                            </tr>
-                            <tr>
-                                <td colspan="3" class="label-cell">Payment Terms & Credit Days</td>
-                                <td colspan="3" id="ui_creditDays" contenteditable="true"></td>
-                                <td colspan="3" class="label-cell">THC Subsidy</td>
-                                <td colspan="3" id="ui_remTHC" contenteditable="true"></td>
-                            </tr>
-                            <tr>
-                                <td colspan="3" class="label-cell">CHA Involved</td>
-                                <td colspan="3" id="ui_chaInvolved" contenteditable="true"></td>
-                                <td colspan="3" class="label-cell">THC Subsidy Claim By</td>
-                                <td colspan="3" id="ui_thcClaimBy" contenteditable="true"></td>
-                            </tr>
-                            <tr>
-                                <td colspan="3" class="label-cell">CHA Incentive Remarks</td>
-                                <td colspan="3" id="ui_chaIncRem" contenteditable="true"></td>
-                                <td colspan="3" class="label-cell">Transport Vendor</td>
-                                <td colspan="3" id="ui_transVendor" contenteditable="true"></td>
-                            </tr>
-                            <tr>
-                                <td colspan="3" class="label-cell">Incentive Claim By</td>
-                                <td colspan="3" id="ui_incClaimBy" contenteditable="true"></td>
-                                <td colspan="3" class="label-cell">Transport Rates</td>
-                                <td colspan="3" id="ui_transRates" contenteditable="true"></td>
-                            </tr>
-                            <tr>
-                                <td colspan="3" class="label-cell">Forwarder involved::</td>
-                                <td colspan="3" id="ui_fwdInvolved" contenteditable="true"></td>
-                                <td colspan="3" class="label-cell">TPT Subsidy Claim By</td>
-                                <td colspan="3" id="ui_tptClaimBy" contenteditable="true"></td>
-                            </tr>
-                            <tr>
-                                <td colspan="3" class="label-cell">Incentive Claim By::</td>
-                                <td colspan="3" id="ui_incClaimBy2" contenteditable="true"></td>
-                                <td colspan="3" class="label-cell">Special Remarks</td>
-                                <td colspan="3" id="ui_remSpecial" contenteditable="true"></td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <!-- Dynamic Tariff Tables Container -->
-                    <div id="dynamic_tables_container">
-                        <!-- Yahan se Dynamic Tariff Blocks inject honge -->
-                    </div>
-                </div>
-
-                <!-- RIGHT COLUMN (Customer List / Shippers Name) -->
-                <div class="right-column">
-                    <table class="data-table" style="height: 100%; margin-bottom: 0;" id="shippers_table">
-                        <tbody>
-                            <tr>
-                                <td class="header-cell shippers-box-header uppercase" style="height: 33px;">Shippers Name</td>
-                            </tr>
-                            <tr>
-                                <td id="shippers_content_box" contenteditable="true" class="data-cell bg-white shippers-box-content"></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+<div class="container">
+    <div class="header-actions">
+        <div class="header-left">
+            <h2>Commodity TEU Matrix (Import / Export)</h2>
+            <div class="toggle-group">
+                <button id="importToggleBtn" class="toggle-btn active" onclick="switchDataMode('import')">Import</button>
+                <button id="exportToggleBtn" class="toggle-btn" onclick="switchDataMode('export')">Export</button>
             </div>
-
+        </div>
+        <div class="btn-group">
+            <button id="downloadCombinedBtn" class="btn" onclick="downloadCombinedReports()">Download Combine Reports</button>
+            <button id="downloadAllBtn" class="btn" onclick="downloadAllReports()">Download All Reports</button>
+            <button id="downloadOtherBtn" class="btn" onclick="downloadOtherReport()">Download 'OTHER' List</button>
+            <button id="downloadBtn" class="btn" onclick="downloadReport()">Download Main Report</button>
         </div>
     </div>
+    
+    <h3 id="dateRangeHeader" class="date-range"></h3>
 
-    <script>
-        // Data Imported from Tariff Generator App
-        const CONFIG = { SHEET_ID: '1iWYD0BShhoVYOx0HLkvs8-fz53JQisjuvARFGpt9hzg' };
-        let sheetRecords = [];
-        
-        const slabs = [
-            {label:'00 MT-10 MT (20)', p:30690, m:10092},
-            {label:'10 MT-20 MT (20)', p:38720, m:12595},
-            {label:'20 MT-26 MT (20)', p:46200, m:14512},
-            {label:'26 MT-30 MT (20)', p:50820, m:15378},
-            {label:'Above 30.1 MT (20)', p:50820, m:15378},
-            {label:'Upto 20 MT (40)', p:53790, m:17275},
-            {label:'Over-20 MT (40)', p:65890, m:19425}
-        ];
+    <div class="upload-grid">
+        <div id="importUploadSection" class="upload-section">
+            <label for="importFileInput"><strong>Upload your Import Running Master file</strong></label><br><br>
+            <input type="file" id="importFileInput" accept=".xlsx,.xlsm">
+        </div>
+        <div id="exportUploadSection" class="upload-section" style="display:none;">
+            <label for="exportFileInput"><strong>Upload your Export Running Master file</strong></label><br><br>
+            <input type="file" id="exportFileInput" accept=".xlsx,.xlsm">
+        </div>
+    </div>
+    <div id="loading">Processing large file, please wait...</div>
+    <div id="reportToolbar" class="report-toolbar">
+        <h4 id="reportToolbarTitle">Import Reports</h4>
+        <div id="reportButtons" class="report-buttons"></div>
+    </div>
 
-        const subsidyData = {
-            'FACTORY': [0,0,0,0,0,0,0],
-            'OWPL': [3200,3200,3200,3200,3200,5600,5600],
-            'PSWC': [2500,2500,2500,2500,2500,4500,4500],
-            'Double -2x20"': [0,0,0,0,0,0,0]
+    <div id="output" class="table-responsive"></div>
+</div>
+
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-modal">
+        <div class="loading-title">Loading...</div>
+        <div id="loadingStatus" class="loading-subtitle">Preparing file</div>
+        <div class="progress-bar">
+            <div id="loadingProgressFill" class="progress-fill"></div>
+        </div>
+        <div id="loadingProgressValue" class="progress-value">0%</div>
+    </div>
+</div>
+
+<script>
+    // MASSIVELY EXPANDED PRIORITY-BASED COMMODITY GROUPS - UPDATED WITH USER CORRECTIONS
+    const orderedCommodityGroups = [
+        { group: "SOLAR EQUPMENTS", keywords: ["solar", "photovoltaic", "pv module", "pv cell", "panel", "inverter", "equpment", "modules"] },
+        { group: "ALUMINIUM SCRAP", keywords: ["harmless", "alluminium patila", "al drop", "aldrop", "aluminium scrap", "alu scrap", "aluminum scrap", "taint", "tabor", "tense", "aluminium waste"] },
+        { group: "HMS/SCRAP/METEL SCRAP", keywords: ["scrap", "hms", "melting", "ferrous", "metal scrap", "re-rollable", "remelted", "turning", "waste", "discarded", "unserviceable", "dechet", "copper barley", "lead ingot", "cast iron"] },
+        { group: "TRACTOR/TRACTOR PARTS/AGRI", keywords: ["exceeding 18kw", "exceeding 18 kw", "not exceeding 18kw", "not exceeding 18 kw", "exceding 18 kw but not", "exceeding 18 kw but not", "exceeding18 kw but not", "exceeding 18 mkw but not", "not exeeding 18kw", "exceeeding 18kw", "exceeding 37kw", "exceeding 37 kw", "exceeding37 kw but not", "exceeding 37 kw but not", "exceding 37 kw but not", "exceeding 37 kw but no", "exceeding37 but not", "exceeeding 37kw", "exceeding 75kw", "exceeding 75 kw but not", "exceeding 75 kw but no", "hurdle", "rotary tiller", "radial grader", "rottary tiller", "hopper arh", "shake grader", "mobile fencing", "60 harvesting or threshing", "harvestving or threshing", "harvesting", "disc horrow mounted", "disc harrow", "solis 9220", "solis", "harvesting/threshin", "harvesting or threshing", "farm clevis", "chopper", "chaff cuter-grass choppers", "hopper", "harvesting finger", "tractor", "trcator", "agricultural", "agircultural", "agriclutural", "agri", "harvester", "rotavator", "mower", "sprayer", "chaff cutter", "planter", "earth auger", "poultry", "horticultural", "horti", "plough", "cultivator", "thresher", "threashing", "seeder", "diesel engine", "weed"] },
+        { group: "BICYCLE /BICYCLE PARTS", keywords: ["bicycale parts", "coaster brake", "kick scooter", "bicycle", "cycle", "bike", "tricycle", "bicyale", "bicyle", "bicyles", "bicylce", "bicyele"] },
+        { group: "AUTO PARTS", keywords: ["mv parts", "m v parts", "m.v parts", "m.v.parts", "transmission shafts", "cutch block", "engine parts", "fittings", "hose coupling", "scafflolding", "diesel enigne", "accessories", "transmission parts", "leaf springs", "deisel engine", "wheel rim", "starter", "chock", "weilding material", "vechiles other than railway", "orgainic grinding wheels", "d/engine", "wheel", "spring", "trolly wheel", "engine & parts", "grinding wheels", "water stopper", "springs", "seats", "belts", "bancraft", "supender belts", "shafts", "auto", "automotive", "spare parts", "car parts", "motorcycle", "axle", "bearing", "forklift", "stroller", "wheelchair", "battery", "trailer", "jeep", "vehicle", "brake shoe", "radiator", "steering", "clutch", "suspension", "bumper", "accumulators"] },
+        { group: "COTTON YARN/FABRIC/RMG", keywords: ["man-made staple", "man-mad staple", "man-made-staple", "mam-made-staple", "blended", "belended", "fibre", "polyster", "synthetic staple fibers", "indian wool tops", "wools", "womens or girls singlrts", "fiber conrete spacers", "wool & fine", "sutis of artificial fibres", "mens or boys clothes", "r.m.g.", "wedding dcor big fiber pill", "fiber", "cotton", "yarn", "fabric", "rmg", "garment", "apparel", "textile", "polyester", "nylon", "spandex", "dty", "fdy", "chenille", "viscose", "knitted", "woven", "thread", "drawn textured", "towel", "blanket", "shirt", "trouser", "jersey", "singlet", "slip", "shawl", "linen", "romper", "clothing", "socks", "suit", "muffler"] },
+        { group: "NATURAL/SYN RUBBER/TYRES/TUBES", keywords: ["new penumatic tyers", "rubber", "tyre", "tire", "tube", "conveyor", "eva", "elastomer", "flap", "vulcanised"] },
+        { group: "SPORTS GOODS", keywords: ["gloves,mittens & mitts", "gloves,mittens&mitts", "gloves, mittens", "gloves,mittens", "gloves", "basket", "saddlery & harness", "saddlery&harness", "saddlery", "firm grip leather", "helmets", "glove,mittens", "leather carpenter", "kneepads", "sports", "athletic", "tennis", "fitness", "exercise", "basketball", "cricket", "boxing", "racket"] },
+        { group: "GLASS ITEMS", keywords: ["carboys,bottles,flasks", "carboys, bottles,flasks", "empty bottles", "glass", "mirror", "vial", "ampoule", "glassware"] },
+        { group: "HAND TOOLS", keywords: ["tamper head", "files", "files,rasps", "files,rasps,pilers", "tweezers set", "drawings,markings", "carpenter pinner plier", "taps", "chaffcutter", "ring spannners", "plier", "cutter", "wedge", "small manual holder", "axe", "files light", "staplers", "jack", "hand tool", "wrench", "hammer", "pliers", "tool", "nut", "bolt", "screw", "washer", "drill", "chisel", "fastener", "rivet", "anchor", "blade", "grinder", "socket", "hardware", "spanner", "trowel", "pick axe", "crowbar", "nail", "tack", "threaded bar", "thread bar", "threaded rod", "allen key", "padlock", "hinge", "clamp"] },
+        { group: "SCAFFOLDING ITEMS", keywords: ["coupler", "swivel cupler", "shutring", "strut fittings", "scaffolding", "scaffold", "mivan pin", "cup lock", "base plate", "tie rod", "shuttering", "girder coupler", "base jack", "top cup", "bottom cup", "ledger blade", "prop", "formwork", "concrete spacer", "trench"] },
+        { group: "MACHINERY /MACHINERY PARTS", keywords: ["exceeding 18kw parts", "exceeding 37kw parts", "exceeding 75kw parts", "machiary parts", "b.parts", "b parts", "b/parts", "diesel parts", "eng. parts", "parts & accessories", "parts and accessories", "parts & accessorise", "parts & accessorises", "parts & accessoriess", "parts accessiories of the", "parts for use solely", "kirloskar supply", "engg goods", "engg. goods", "engg goofs", "machnery", "weighbridge consisting", "three rollers", "sturucturs parts", "strucutre parts", "railway parts", "chain assembly", "elelctrial parts", "parts fuel", "sewing macine", "moter vehocle parts", "spacer", "spacers", "shim", "shredder", "furnace burners", "electric generating sets", "pulley", "chain parts", "spindle assembly", "roofing parts", "forntures parts", "fork lift trucks parts", "parts of component", "parts of machienry", "taailer parts", "not exceeding 18kw parts", "exceeding 18 kw parts", "sprocket", "castor", "part & accessories", "parts", "machine", "machinery", "machinary", "equipment", "cnc", "lathe", "embroidery", "spinning", "printing", "welding", "compressor", "pump", "motor", "mill", "extruder", "loom", "stenter", "generator", "die casting", "centrifuge", "hoist", "tackle", "winch", "bulldozer", "excavator", "earth mover", "crane", "reactor", "boiler", "valve", "instrument", "apparatus"] },
+        { group: "HOUSE HOLD ITEMS", keywords: ["cooler", "bath access", "thali set", "wrist-watches,pocket-watche", "trunks", "body mist spray", "mixing bowl", "canvas pouch", "gas stove", "spoons forks ladles", "concealed stop cock", "water cool", "baskets", "fas fill fan", "karandi", "dishwash", "funnel", "sanitry ware & parts", "house hold", "household", "furniture", "utensil", "heater", "chair", "cabinet", "bathroom", "pouffe", "basin", "ceramic", "decor", "door", "window", "bed", "sofa", "sanitary", "table", "kitchen", "mattress", "stoves", "refrigerator", "cooker", "jug", "bucket"] },
+        { group: "FOOD ITEM", keywords: ["bread,pastry,cakes", "bread pastry cakes", "bread,pastry,cakes,", "bread,pastry", "bread, pastry, cakes", "bread,pasrty,cakes", "bread,pastery,cakes", "flakes", "starches", "protein concentrates", "rhum", "gin", "bread", "c-drink", "c drink", "jams,fruits jellies", "unique vanilla", "macroni rosted", "masala", "biscutis", "biscut", "tiger eye cafe rhum", "dex gum poweder", "wine", "hanging basket", "twine,cordage,ropes", "laboratory, hyginic", "namkin boondi", "masala jeera", "towal paan kandi/gurmala", "seeds", "food", "rice", "wheat", "sugar", "spice", "edible", "pulse", "dates", "cashew", "coconut", "gluten", "syrup", "salt", "pasta", "maltol", "methionine", "feed", "gallnut", "biscuit", "cookie", "whisky", "whiskey", "beer", "rum", "alcohol", "beverage", "jaggery", "potato", "moong", "mustard", "oil", "saag", "macaroni", "namkeen", "bhujia", "laddoo", "sweets", "cereal", "vegetable", "honey"] },
+        { group: "CHEMICALS", keywords: ["metformin hcl", "metformin", "body mist", "medicine", "acetaminophen", "acetic anhydride", "saturated acyclic", "i buprofen", "ibupprofen", "dental hygiene", "whsky", "whishky", "organic compounds", "hl medicine", "pharma goods", "carbon", "organic colouring", "clopidogrel bisulfate", "nicardipine hydrochloride", "other organic", "pharmacutical item", "medicines", "chemical", "acid", "resin", "powder", "dicyandiamide", "chlorate", "dioxide", "hydroxide", "polyol", "masterbatch", "polyethylene", "polypropylene", "polymer", "additive", "silicone", "glue", "adhesive", "calcium carbonate", "melamine", "epoxy", "oxide", "ibuprofen", "paracetamol", "lamotrigine", "fenofibrate", "medical", "pharmaceutical", "medicament", "injection", "grease", "lubricant", "silicate", "acetate", "cosmetic", "toiletries", "perfume", "soap", "detergent", "laundry"] },
+        { group: "PULP/WASTE PAPER/CARBORD/PVC", keywords: ["thermal lamination", "folms", "vinyle", "card voard", "pet bottle", "articles of pastics", "pulp", "waste paper", "cardboard", "pvc", "paper", "wpc", "panel", "plywood", "veneer", "wood", "board", "timber", "tissue", "laminate", "flooring", "skirting", "acrylic", "bopp", "film", "plastic", "mdf", "carton", "box", "bag", "sack", "books"] },
+        { group: "STEEL/ALLOY", keywords: ["double f beam", "beam", "frames", "hot dip galvanized", "frame work", "flat rolled", "hot dip", "traffic post", "builders ware", "housing center", "hot rolled", "sheep gate", "housing", "gate frame", "concrete spancer", "roofing frame", "dipped galvanised", "glavanised", "sturucturs part", "grates", "tramway track", "hot dip sprin", "steel", "alloy", "coil", "sheet", "pipe", "wire", "bar", "rod", "casting", "forging", "iron", "aluminium", "aluminum", "copper", "zinc", "brass", "structure", "strcuture", "flange", "angle", "channel", "plate", "metal", "stone", "granite", "pebble", "brick", "cement", "monumental", "building material"] }
+    ];
+
+    const compiledMatchers = orderedCommodityGroups.map(item => ({
+        group: item.group,
+        regex: new RegExp("(" + item.keywords.join("|") + ")", "i")
+    }));
+
+    const exactCommodityGroupMap = {
+        "COMMODITY": "OTHER",
+        "1 SET OF COMPLETE TWO FOR ONE": "OTHER",
+        "10 SETS COMPUTERIZED EMBROIDER": "OTHER",
+        "100% TANBOOCEL JIGAO BAMBOO FI": "OTHER",
+        "2 SET (3100 NOS)  OF REFRACTOR": "OTHER",
+        "2 SETS SECOND HAND USED FRANCE": "OTHER",
+        "2X40' CNTR(S) S.T.C   SHIPPER'": "OTHER",
+        "4 SETS OF 920-250*750*1300 FLA": "OTHER",
+        "4 SETS OF COMPUTERIZED EMBROID": "OTHER",
+        "40PC BIT": "HAND TOOLS",
+        "4-ACETYLAMINO": "OTHER",
+        "4X40' CNTR(S) S.T.C   SHIPPER'": "OTHER",
+        "4X40 FT CONTAINERS OF GUINEA C": "OTHER",
+        "5000KGS VITAMIN PREMIX (LAYER": "FOOD ITEM",
+        "A.C COMFORTER COZY FLANNEL": "HOUSE HOLD ITEMS",
+        "A.C.COMFORTER  DUALFILL COMFOR": "HOUSE HOLD ITEMS",
+        "ABS EDGE": "OTHER",
+        "ABSORBENT COOLING PAD KRAFT PA": "OTHER",
+        "ACCELERATOR CBS  N CYCLOHEXYL": "OTHER",
+        "ACTIVATED ALUMINA CLAUS CATALY": "ALUMINIUM SCRAP",
+        "AD JUICER ROLLER": "OTHER",
+        "AG*5 COLOR CCD COLOR SORTER": "OTHER",
+        "AGM SEPARATOR 49MMX 3.0MM": "OTHER",
+        "AIR HOSE": "MACHINERY /MACHINERY PARTS",
+        "AL. FRAME": "STEEL/ALLOY",
+        "ALARM 121": "OTHER",
+        "ALKYL KETENE DIMER": "OTHER",
+        "ALL SEASONS": "OTHER",
+        "AMINE-FUNCTION COMPOUNDS - ACY": "CHEMICALS",
+        "AMMONIUM BI CORBONATES": "OTHER",
+        "ANTI-KNOCK PREPARATIONS, OXIDA": "OTHER",
+        "ANTI-SCRATCH THERMAL LAMIANTIO": "OTHER",
+        "APPLIANCES": "OTHER",
+        "ART WORKS": "OTHER",
+        "ARTICLE OF LEATHER": "MACHINERY /MACHINERY PARTS",
+        "ARTICLES": "MACHINERY /MACHINERY PARTS",
+        "ARTICLES & EQUIPEMENT": "MACHINERY /MACHINERY PARTS",
+        "ARTICLES & EQUIPMETS": "MACHINERY /MACHINERY PARTS",
+        "ARTICLES & EUIPMENTS": "MACHINERY /MACHINERY PARTS",
+        "ARTICLES FOR CONVEYANCE": "MACHINERY /MACHINERY PARTS",
+        "ARTICLES OF LEATHER": "MACHINERY /MACHINERY PARTS",
+        "ARTIFICIAL GRAPHITE": "OTHER",
+        "AUSTRALIAN GREASY": "OTHER",
+        "AUSTRALIAN GREASY WOOL": "COTTON YARN/FABRIC/RMG",
+        "AUSTRALIAN WOOL TOPS": "COTTON YARN/FABRIC/RMG",
+        "AXMINSTER WOOL 32-36 MICRON": "COTTON YARN/FABRIC/RMG",
+        "BABY WALKER AND CARRIAGE": "AUTO PARTS",
+        "BALL CLEVIS": "OTHER",
+        "BALL OR ROLLER": "OTHER",
+        "BATTERIES": "OTHER",
+        "BELT ROLLS": "OTHER",
+        "BORSTAR FB1350 LLD POLYETHYLEN": "NATURAL/SYN RUBBER/TYRES/TUBES",
+        "BORSTAR FB2230 LLD POLYETHYLEN": "NATURAL/SYN RUBBER/TYRES/TUBES",
+        "BRAND NEW CAPITAL DYEING MACHI": "CHEMICALS",
+        "BRAND NEW COMPUTERIZED FLAT KN": "OTHER",
+        "BRAND NEW COMPUTERIZED FULLY F": "OTHER",
+        "BRAND NEW FULLY COMPUTERISED H": "OTHER",
+        "C & T PIN": "HAND TOOLS",
+        "CABLE TRAY": "OTHER",
+        "CALCINED ANTHRACITE": "OTHER",
+        "CALCINED ANTHRACITE COAL": "OTHER",
+        "CALCINED ANTHRACITE COAL (CARB": "AUTO PARTS",
+        "CALCINED ANTHRACITEC COAL": "OTHER",
+        "CALCINED ANTHRACITEC COALRAISE": "OTHER",
+        "CALCIUM FORMATE 98%MIN.": "OTHER",
+        "CALCLINED ANTHRACITE COAL": "OTHER",
+        "CALENDERING OR OTHER ROLLING M": "OTHER",
+        "CAP": "OTHER",
+        "CARBIDE BUTTON BITS": "AUTO PARTS",
+        "CAST ARTICLES": "MACHINERY /MACHINERY PARTS",
+        "CERTAIN GOODS, AS PROVIDED FOR": "MACHINERY /MACHINERY PARTS",
+        "CHENICALS R": "OTHER",
+        "CHITARRA FERROSA": "OTHER",
+        "CHLORINATED PARAFFIN": "CHEMICALS",
+        "CHOLINE CHLORIDE 60% CORN COB": "CHEMICALS",
+        "CHROMIUM ORES AND CONCENTRATES": "OTHER",
+        "CLADDED TRIPLY CIRCLE ----(SS": "OTHER",
+        "CLADDED TRIPLY CIRCLE----(SS &": "OTHER",
+        "CLAY ROOF TILES": "GLASS ITEMS",
+        "CLIP": "HAND TOOLS",
+        "CLOPIDOGREL BISCLFATE": "OTHER",
+        "CLOTHS": "OTHER",
+        "CLUCTH BLOCK": "OTHER",
+        "COBALT MATTES AND OTHER INTERM": "OTHER",
+        "COLLAR": "OTHER",
+        "COMPLETE BICCYLE": "OTHER",
+        "COMPLETE SET": "OTHER",
+        "COMPLETE SET OF PRESSURE DIE C": "MACHINERY /MACHINERY PARTS",
+        "COMPOSITE MANHOLE COVER": "OTHER",
+        "COMPOSITE MANHOLE COVERS": "OTHER",
+        "COMPRESSION": "MACHINERY /MACHINERY PARTS",
+        "COMPRESSION-IGNITION INTERNAL": "MACHINERY /MACHINERY PARTS",
+        "COMPUTERIZED FLAT KNITTING MAC": "OTHER",
+        "CONCRETE MIXER": "MACHINERY /MACHINERY PARTS",
+        "CONDENSER": "OTHER",
+        "CONTER BOOK": "OTHER",
+        "CONTINUOUS SPIRAL FLIGHT MACHI": "HOUSE HOLD ITEMS",
+        "CONVEYANCE ARTICLES": "MACHINERY /MACHINERY PARTS",
+        "COTTER PINS": "HAND TOOLS",
+        "CRUDE GLYCERINE": "OTHER",
+        "CUP DROP FORGED": "OTHER",
+        "CUP FORGED": "OTHER",
+        "CURLED BUSH.": "OTHER",
+        "CUTTING RULE": "MACHINERY /MACHINERY PARTS",
+        "DCS SYSTEM": "MACHINERY /MACHINERY PARTS",
+        "DEBRIS DE FONTE": "OTHER",
+        "DEFOAMER BC-H5C": "OTHER",
+        "DEFOAMER BC-LHP 20": "OTHER",
+        "DEFOAMER H30": "OTHER",
+        "DENIER SEMI DULL RAW": "OTHER",
+        "DENTAL KIT": "CHEMICALS",
+        "DEWALT LEATHER": "HOUSE HOLD ITEMS",
+        "DOLLAR SKIN FRUIT CREAM": "FOOD ITEM",
+        "DOUBLE COLOR PRINTER SLOTER 14": "MACHINERY /MACHINERY PARTS",
+        "DOUBLE SIDE": "OTHER",
+        "DOUBLE STATIONS OUTER POLISHIN": "OTHER",
+        "DRAWN TEXTURISED": "OTHER",
+        "DRAWPIN CLIP": "HAND TOOLS",
+        "DUST COLLECTOR": "OTHER",
+        "DWEALT LEATHER": "HOUSE HOLD ITEMS",
+        "ELECTRIC": "MACHINERY /MACHINERY PARTS",
+        "ELECTRIC HEATED VULCANIZATION": "MACHINERY /MACHINERY PARTS",
+        "ELECTRIC ITEMS": "STEEL/ALLOY",
+        "ELECTRIC ROUTER": "MACHINERY /MACHINERY PARTS",
+        "ELECTRIC VIBRATOR": "MACHINERY /MACHINERY PARTS",
+        "ELECTRIC(INCLUDING": "MACHINERY /MACHINERY PARTS",
+        "ELECTRICAL AND ELECTRONIC WAST": "MACHINERY /MACHINERY PARTS",
+        "ELECTRICAL CONNECTOR": "MACHINERY /MACHINERY PARTS",
+        "ELECTRICAL IGNITION OR STARTIN": "MACHINERY /MACHINERY PARTS",
+        "ELECTRICAL TRANSFORMER": "MACHINERY /MACHINERY PARTS",
+        "ELECTRICAL TRANSFORMERS, STATI": "MACHINERY /MACHINERY PARTS",
+        "ELECTRICALS CONNECTORS": "MACHINERY /MACHINERY PARTS",
+        "ELECTRO MAGNET": "MACHINERY /MACHINERY PARTS",
+        "ELECTRO MAGNETS": "MACHINERY /MACHINERY PARTS",
+        "ELECTRO WEIGHING SCALES.": "OTHER",
+        "ELITE PLATFORM BASE": "OTHER",
+        "EPS PRE EXPANDER WITH ALL ACCE": "OTHER",
+        "ETHYL": "OTHER",
+        "EXPANDER": "OTHER",
+        "EXPANDER EM ERTTC 1260": "OTHER",
+        "EXPANDING RAKE 15T WITH ADJUST": "OTHER",
+        "FASTNERS": "HAND TOOLS",
+        "FE BASED AMORPHOUS": "OTHER",
+        "FE BASED AMORPHOUS ALLLOYS STR": "OTHER",
+        "FEELER GAUGE": "OTHER",
+        "FERRITE MAGNET": "MACHINERY /MACHINERY PARTS",
+        "FILAMENT REWIDNING WINDER MODE": "OTHER",
+        "FOAMING MOULD": "OTHER",
+        "FOOTCONTAINERSAIDTOCONTAIN": "OTHER",
+        "FOUR SPINDLE CLASSIC TAPPING M": "HAND TOOLS",
+        "FRUITOSE DU CRYSTALLINE": "FOOD ITEM",
+        "GAS CALCINED ANTHRACITE": "OTHER",
+        "GAS CALCINED ANTHRACITE COAL": "OTHER",
+        "GATE LATCH": "OTHER",
+        "GE2268 NUMARICAL CONTROLLED TR": "OTHER",
+        "GE2285 HIGH SPEED RASCHEL MACH": "OTHER",
+        "GLYCEROL, CRUDE; GLYCEROL WATE": "OTHER",
+        "GRAPHITE FINES": "OTHER",
+        "GREASY RAW WOOL": "COTTON YARN/FABRIC/RMG",
+        "GRM": "OTHER",
+        "GUANIDINE HYDROCHLORIDE": "CHEMICALS",
+        "HAND PATIO": "OTHER",
+        "HANDLE STEM": "OTHER",
+        "HARDWERE ITEMS": "STEEL/ALLOY",
+        "HAREWARE ITEMS": "STEEL/ALLOY",
+        "HEADREST FRAME OB PART": "MACHINERY /MACHINERY PARTS",
+        "HEAT SHRINKABLE TUBING AND MAS": "OTHER",
+        "HELMET": "OTHER",
+        "HOLDER": "OTHER",
+        "HOOK SMALL": "OTHER",
+        "HOSE": "MACHINERY /MACHINERY PARTS",
+        "HOSES": "MACHINERY /MACHINERY PARTS",
+        "HOT TANK.": "OTHER",
+        "HOUSHOLD GOODS": "MACHINERY /MACHINERY PARTS",
+        "HS CODE:55062000": "OTHER",
+        "HYD BILLET SHEARING MAHINE": "OTHER",
+        "HYDRAULIC": "OTHER",
+        "I PIN": "HAND TOOLS",
+        "IBUPROFIEN USP": "OTHER",
+        "IBUPROFIN": "OTHER",
+        "IBUPROFIN PH.EUR": "OTHER",
+        "IBUPROFIN USP": "OTHER",
+        "IN SHELL": "OTHER",
+        "INDUSTRIAL CEILING FAN": "HOUSE HOLD ITEMS",
+        "INDUSTRIAL OR LABORATORY ELECT": "CHEMICALS",
+        "INSULATED": "OTHER",
+        "INSULATED(INCLUDING": "OTHER",
+        "INSULEX 50A": "OTHER",
+        "JH-ZK-250T4(250TON VACUUM DOUB": "OTHER",
+        "JOINT PIN": "HAND TOOLS",
+        "KINGFAST BR-R": "OTHER",
+        "LAB ITEMS": "STEEL/ALLOY",
+        "LABORATORY": "CHEMICALS",
+        "LABORATORY GOODS": "MACHINERY /MACHINERY PARTS",
+        "LABORATORY HYGIENIC": "CHEMICALS",
+        "LABORATORY,HYGIENIC": "CHEMICALS",
+        "LABORATOY,HYGIENIC": "CHEMICALS",
+        "LANCE  HS CODE:8424902000": "OTHER",
+        "LEAD": "HMS/SCRAP/METEL SCRAP",
+        "LEAD CONCENTRATES": "HMS/SCRAP/METEL SCRAP",
+        "LEATHER": "HOUSE HOLD ITEMS",
+        "LEATHER FURTHER PREPARED AFTER": "HOUSE HOLD ITEMS",
+        "LEATHER GOODS": "MACHINERY /MACHINERY PARTS",
+        "LEATHER MATERIAL": "HOUSE HOLD ITEMS",
+        "LEATHERS GOODS": "MACHINERY /MACHINERY PARTS",
+        "LIGNIN": "OTHER",
+        "LMS BUNDLES": "HMS/SCRAP/METEL SCRAP",
+        "LMS BUNDLES LMS BUNDLES LMS BUNDLES LMS BUNDLES LMS": "HMS/SCRAP/METEL SCRAP",
+        "LOST FOAM COATING": "OTHER",
+        "L-THREONINE": "OTHER",
+        "LUMINAIRES AND LIGHTING FITTIN": "HOUSE HOLD ITEMS",
+        "LZ-1650 5 PLY FLUTE LAMINATOR": "OTHER",
+        "MAN MADE STAPLE": "OTHER",
+        "MANUFACTURED": "OTHER",
+        "MARBLE": "GLASS ITEMS",
+        "MEDIUM FREQUENCY RESISTANCE WE": "OTHER",
+        "METAFORMIN": "OTHER",
+        "METRONIDAZOLE INFUSION": "OTHER",
+        "MINI WARPING FOR DE": "HAND TOOLS",
+        "MOULD": "OTHER",
+        "MOULD HS CODE:8480790090": "OTHER",
+        "MOULDS FOR FOOTWEAR": "OTHER",
+        "MS SHTEET HOSE": "STEEL/ALLOY",
+        "MTL-TSA20V/10A /10A*6  LIFE CY": "OTHER",
+        "NATURAL OR ARTIFICIAL ABRASIVE": "OTHER",
+        "NATURAL RUTILE SAND": "GLASS ITEMS",
+        "NEW ACTUATOR & CAP FOR EQUATE": "OTHER",
+        "NEW CIRCULAR HIGH SPEED": "OTHER",
+        "NF TAURINE 17L03TAU": "OTHER",
+        "NICARBAZIN 25% PREMIX GRANULE": "AUTO PARTS",
+        "NICKEL CATHODES": "HMS/SCRAP/METEL SCRAP",
+        "NON VACUUM COMPRESSION FORMING": "MACHINERY /MACHINERY PARTS",
+        "OF A KIND USED ON": "OTHER",
+        "OF WASHING PREPARATION": "OTHER",
+        "OFA KINDS USED ON": "OTHER",
+        "ORGANIC COMPUNDS": "OTHER",
+        "ORGANIC SURFACE-ACTIVE AGENTS": "OTHER",
+        "ORGANIC,COMPOUNDS": "CHEMICALS",
+        "OTHER": "OTHER",
+        "OTHER ARTICLES": "MACHINERY /MACHINERY PARTS",
+        "OTHER ARTICLES OF LEAD": "HMS/SCRAP/METEL SCRAP",
+        "OTHER ARTICLES OF LEATHER": "MACHINERY /MACHINERY PARTS",
+        "OTHER ARTICLES OF VALCANISED": "MACHINERY /MACHINERY PARTS",
+        "OTHER FURNISHING": "OTHER",
+        "OTHER LIFTING": "OTHER",
+        "OTHER LIFTING, HANDLING, LOADI": "OTHER",
+        "OTHER PAINTS AND VARNISHES (IN": "OTHER",
+        "OTHERS": "OTHER",
+        "OTR CMP": "OTHER",
+        "PACKAGES ABDOMINAL BELT KNEE CAPS": "PULP/WASTE PAPER/CARBORD/PVC",
+        "PADDY SEPARATOR  MGCZ60*20*1": "TRACTOR/TRACTOR PARTS/AGRI",
+        "PAINTS AND VARNISHES (INCLUDIN": "OTHER",
+        "PART & ACCESSSORIES": "MACHINERY /MACHINERY PARTS",
+        "PART AND ACCESSOIRES": "MACHINERY /MACHINERY PARTS",
+        "PARTIAL SHIPMENT OF 4200 MM DO": "MACHINERY /MACHINERY PARTS",
+        "PE STICKER": "OTHER",
+        "PEARLIZING AGENT": "OTHER",
+        "PICTURES": "OTHER",
+        "PILLERS": "OTHER",
+        "PIN FORGED": "HAND TOOLS",
+        "POE GRADE": "OTHER",
+        "POLYTHENE": "NATURAL/SYN RUBBER/TYRES/TUBES",
+        "POUCH": "PULP/WASTE PAPER/CARBORD/PVC",
+        "PREPARATIONS OF A KIND USED IN": "OTHER",
+        "PREPARED BINDERS FOR FOUNDRY M": "OTHER",
+        "PRESSING BLOCK": "MACHINERY /MACHINERY PARTS",
+        "PROTOBIND": "OTHER",
+        "PTMEG1800": "OTHER",
+        "PU SYNTHETIC LEATHER": "HOUSE HOLD ITEMS",
+        "QL1350TZ PUR LAMINATING MACHIN": "OTHER",
+        "RAPID CUT RE-833LL": "OTHER",
+        "RATCHET": "OTHER",
+        "REACTIVE DYE AQUA PREMIUM": "CHEMICALS",
+        "RECLAIMING AGENT- WINSTAR RA48": "OTHER",
+        "RECYCLABLE RESIDUES": "CHEMICALS",
+        "RECYCLING MATERIAL": "OTHER",
+        "RELIGIOUS GOD STATUE": "OTHER",
+        "ROLLING ROLLS": "OTHER",
+        "ROOFING TILES, CHIMNEY POTS, C": "GLASS ITEMS",
+        "ROPES": "OTHER",
+        "SCAFFLODING": "SCAFFOLDING ITEMS",
+        "SECOND HAND CIRCULAR KNITTING": "OTHER",
+        "SHAFT": "OTHER",
+        "SHOVEL": "HAND TOOLS",
+        "SHOVEL HEAD": "HAND TOOLS",
+        "SHREEDER": "OTHER",
+        "SILVER ANODIZING MIN": "OTHER",
+        "SINGLE COLOR PRINTER SLOTER 14": "MACHINERY /MACHINERY PARTS",
+        "SKIP LUG": "OTHER",
+        "SOFT DRAWER SYSTEM, DISH RACK": "MACHINERY /MACHINERY PARTS",
+        "SPIRAL FREEZER": "OTHER",
+        "STRCUTRES(EXCLUDING": "OTHER",
+        "STROKES": "OTHER",
+        "STRUT": "OTHER",
+        "STRUTS": "OTHER",
+        "STRUTURES(EXCLUDING": "OTHER",
+        "STTEL ROUND": "OTHER",
+        "STUD": "OTHER",
+        "STURCTURES": "OTHER",
+        "STURUCTURES": "OTHER",
+        "SULPHATES; ALUMS; PEROXOSULPHA": "STEEL/ALLOY",
+        "SUN SIMULATOR": "OTHER",
+        "SUPPLY OF 3340 PCS OF REFRACTO": "OTHER",
+        "SUPPLY OF GRAIN STORAGE SILOS": "OTHER",
+        "SURFACE PRINTED": "OTHER",
+        "SURFACE PRINTED COATED READY T": "OTHER",
+        "TANKS": "OTHER",
+        "TANNED OR CRUST HIDES AND SKIN": "HOUSE HOLD ITEMS",
+        "TARPAULINS": "OTHER",
+        "TARPAULINS,AWNINGS": "OTHER",
+        "TAXTILE ARTICLES": "MACHINERY /MACHINERY PARTS",
+        "TCT HOLESAW": "HAND TOOLS",
+        "TELESCOPIC LADDER": "SCAFFOLDING ITEMS",
+        "TELESCOPICLADDER": "SCAFFOLDING ITEMS",
+        "TEMPER HEAD": "OTHER",
+        "THICKENING AGENT YM-006": "OTHER",
+        "TRADITIONAL ELECTRIC": "MACHINERY /MACHINERY PARTS",
+        "TRIPLY CIRCLES": "OTHER",
+        "TSM-705NEG21C.20 - THE VERTEX": "SOLAR EQUPMENTS",
+        "TSM-710NEG21C.20 710WP THE VER": "OTHER",
+        "TWO SETS OF COMPUTER EMBROIDER": "OTHER",
+        "UCAT TM J-1 P25 CATALYST": "CHEMICALS",
+        "UNEXPANDED PERLITE ORE": "OTHER",
+        "UNEXPANDED PERLITE ORE, CG 251": "OTHER",
+        "UNIVERSAL JOINTS": "OTHER",
+        "UNWROUGHT LEAD - OTHER - - OTH": "HMS/SCRAP/METEL SCRAP",
+        "UNWROUGHT LEAD - REFINED LEAD": "HMS/SCRAP/METEL SCRAP",
+        "USED COMPUTERIZED FULLY FASHIO": "OTHER",
+        "VACUTHERM MIXER": "MACHINERY /MACHINERY PARTS",
+        "WALL PANE": "HOUSE HOLD ITEMS",
+        "WALL STICKER": "HOUSE HOLD ITEMS",
+        "WATER HOSE": "MACHINERY /MACHINERY PARTS",
+        "WOMEN OR GIRLS SINLETS": "OTHER",
+        "WOOL": "COTTON YARN/FABRIC/RMG",
+        "WOOL TOPS": "COTTON YARN/FABRIC/RMG",
+        "WORKED OR BUILDING": "OTHER"
+    };
+
+    const allGroupNames = orderedCommodityGroups.map(item => item.group).sort();
+    
+    let otherItemsLog = {};
+    let activeReportType = "import";
+    let activeReportKey = "commodity";
+    let currentRows = [];
+    let currentConfig = null;
+    let activeDownloadName = "Commodity_TEU_Summary";
+    let currentTableSort = { columnIndex: null, direction: 'asc' };
+    let loadingProgressTimer = null;
+    let loadedDataCache = {
+        import: { rows: [], config: null },
+        export: { rows: [], config: null }
+    };
+
+    const importColumnMap = {
+        A: "SR",
+        B: "RAKE_ID_FROM_TO",
+        C: "RAILOUT_DATE",
+        D: "ICD_ARRIVAL_DATE",
+        E: "UNLOADING_DATE_TIME",
+        F: "WAGON_TRAILER",
+        G: "CONT_NOS",
+        H: "SIZE",
+        I: "TEUS",
+        J: "DISCH_VSL_NAME",
+        K: "VOY_NO",
+        L: "DISCH_DT",
+        M: "STS",
+        N: "BL_NO",
+        O: "POD",
+        P: "DESTINATION",
+        Q: "CARRIER",
+        R: "TP_NO",
+        S: "TARE_WT",
+        T: "NET_WT",
+        U: "GR_WT",
+        V: "TP_NOTING_DT",
+        W: "TP_SUBMITTING_DT",
+        X: "COMMODITY",
+        Y: "SEAL_NO",
+        Z: "CARGO_TYPE",
+        AA: "REMARKS",
+        AB: "LINE",
+        AC: "IMPORTER",
+        AD: "GATE_OUT_DATE_MMMAG",
+        AE: "TRANSPORTER_MMMAG",
+        AF: "SHIPPER_AS_PER_MMMAG",
+        AG: "CHA_AS_PER_MMMAG",
+        AH: "COOC_DATE_MMMAG",
+        AI: "ARRIVAL_TO_GATEOUT_DAYS",
+        AJ: "ARRIVAL_TO_COC_DAYS",
+        AK: "COC_TO_GATE_OUT_DAYS"
+    };
+
+    const exportColumnMap = {
+        A: "MONTH",
+        B: "DATE",
+        C: "MODE",
+        D: "CONTAINER",
+        E: "SIZE",
+        F: "TEUS",
+        G: "SHIPPING_LINE",
+        H: "MSC_NON_MSC",
+        I: "POL",
+        J: "TOTAL_WEIGHT",
+        K: "COMMODITY",
+        L: "POD",
+        M: "SHIPPER_NAME",
+        N: "CHA",
+        O: "CONTROLLING_PARTY",
+        P: "SALES_PERSON",
+        Q: "INCENTIVE_PARTY",
+        R: "COMMISSION_VENDOR_1",
+        S: "CATEGORY_1",
+        T: "COMMISSION_VENDOR_2",
+        U: "CATEGORY_2",
+        V: "COMMISSION_VENDOR_3",
+        W: "CATEGORY_3",
+        X: "SAP",
+        Y: "SYSTEM_TRAIN_NO"
+    };
+
+    const importDateColumns = new Set([
+        "RAILOUT_DATE",
+        "ICD_ARRIVAL_DATE",
+        "UNLOADING_DATE_TIME",
+        "DISCH_DT",
+        "TP_NOTING_DT",
+        "TP_SUBMITTING_DT",
+        "GATE_OUT_DATE_MMMAG",
+        "COOC_DATE_MMMAG"
+    ]);
+
+    const exportDateColumns = new Set([
+        "MONTH",
+        "DATE"
+    ]);
+
+    const reportConfigs = {
+        import: {
+            type: "import",
+            label: "Import",
+            columnMap: importColumnMap,
+            dateColumns: importDateColumns,
+            monthCellLetter: "E",
+            monthField: "UNLOADING_DATE_TIME",
+            commodityField: "COMMODITY",
+            teusField: "TEUS",
+            headerChecks: {
+                COMMODITY: ["comodity", "commodity"],
+                UNLOADING_DATE_TIME: ["unloading date/time", "unloading date/time (month )", "unloading date/time(month)", "unloading date/time(month )"],
+                TEUS: ["teus", "teu's"]
+            }
+        },
+        export: {
+            type: "export",
+            label: "Export",
+            columnMap: exportColumnMap,
+            dateColumns: exportDateColumns,
+            monthCellLetter: "A",
+            monthField: "MONTH",
+            commodityField: "COMMODITY",
+            teusField: "TEUS",
+            headerChecks: {
+                COMMODITY: ["commodity"],
+                MONTH: ["month"],
+                TEUS: ["teu's", "teus", "teu s"]
+            }
+        }
+    };
+
+    const importLineMap = {
+        "ASD": "ASD",
+        "AVC": "AVG / TSA /TSC / UNIFEEDER",
+        "AVG / TSA /TSC / UNIFEEDER": "AVG / TSA /TSC / UNIFEEDER",
+        "CMA/ACL/ANL": "CMA/ACL/ANL",
+        "CMCGM": "CMA/ACL/ANL",
+        "COS": "COSCO",
+        "FLK": "FLK",
+        "GOLD STAR / ZIM / STAR": "GOLD STAR / ZIM / STAR",
+        "GSU": "GSU",
+        "HLL/HAPAG": "HLL/HAPAG",
+        "HTPL": "HTPL",
+        "IND / JAIVAL": "IND / JAIVAL",
+        "KMD / KMTC": "KMD / KMTC",
+        "LAN": "LAN",
+        "MAERSK": "MAERSK",
+        "MAXICON": "MAXICON",
+        "MCL": "SEA HORSE (SSA)",
+        "MMT": "MMT",
+        "MSC": "MSC",
+        "MSK": "MAERSK",
+        "OCE": "OOCL",
+        "OCL": "OOCL",
+        "OLC": "OOCL",
+        "ONE": "ONE LINE",
+        "OOCL": "OOCL",
+        "SCI": "SCI",
+        "SEA HORSE (SSA)": "SEA HORSE (SSA)",
+        "SILMAR LOGISTICS": "SILMAR LOGISTICS",
+        "SLAPL": "SLAPL(MAXICON)",
+        "SLAPL(MAXICON)": "SLAPL(MAXICON)",
+        "STA": "GOLD STAR / ZIM / STAR",
+        "TGS": "TGS",
+        "TSS": "TSS",
+        "ULSS/LINE": "ULSS/LINE",
+        "UNF": "AVG / TSA /TSC / UNIFEEDER",
+        "UNIFEDER": "AVG / TSA /TSC / UNIFEEDER",
+        "VAS": "VAS",
+        "WAM / WAN": "WAM / WAN",
+        "WIN": "WIN",
+        "WINASIA": "WINASIA",
+        "YML": "YML"
+    };
+
+    const importReportDefinitions = [
+        { key: "commodity", label: "Commodity Report- Imports" },
+        { key: "importerWise", label: "Importer Wise Report" },
+        { key: "chaWise", label: "CHA Wise Report-Imports" },
+        { key: "shippingLineWise", label: "Shipping Line Wise Report-Imports" },
+        { key: "volumesCarrier", label: "Volumes Handled (IMPORT Loaded)" },
+        { key: "volumesLine", label: "Volumes Handled (MSC / OTHERS)-Imports" },
+        { key: "volumesPod", label: "Volumes Handled (KILARAIPUR/ OTHERS CFS)-Imports" }
+    ];
+
+    const exportReportDefinitions = [
+        { key: "commodity", label: "Commodity Report-Exports" },
+        { key: "exportLoaded", label: "Volumes Handled (EXPORT Loaded)" },
+        { key: "exportMscNonMsc", label: "EXPORT MSC / NON MSC" },
+        { key: "exportKilaraipur", label: "ICD Kilaraipur / Other CFS-Exports" },
+        { key: "exportShippingLineWise", label: "Shipping Line Wise (EXPORT)" },
+        { key: "topExporters", label: "Top Exporters" },
+        { key: "topChaExports", label: "Top CHA EXPORTS" }
+    ];
+
+    function parseDateStr(dateValue) {
+        if (dateValue === null || dateValue === undefined || dateValue === "") return null;
+        if (dateValue instanceof Date && !isNaN(dateValue)) return dateValue;
+
+        if (typeof dateValue === 'number') {
+            let excelDate = XLSX.SSF.parse_date_code(dateValue);
+            if (excelDate) {
+                return new Date(
+                    excelDate.y,
+                    excelDate.m - 1,
+                    excelDate.d,
+                    excelDate.H || 0,
+                    excelDate.M || 0,
+                    excelDate.S || 0
+                );
+            }
+        }
+
+        let dateStr = String(dateValue).trim();
+        if (!dateStr) return null;
+
+        let normalized = dateStr.replace(/\s+/g, ' ').trim();
+
+        let monthNameMatch = normalized.match(/^(\d{1,2})[\s\-./]*([A-Za-z]{3,})[\s\-./]*(\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?$/i);
+        if (monthNameMatch) {
+            let day = parseInt(monthNameMatch[1], 10);
+            let monthToken = monthNameMatch[2].slice(0, 3).toLowerCase();
+            let year = parseInt(monthNameMatch[3], 10);
+            let hours = parseInt(monthNameMatch[4] || '0', 10);
+            let minutes = parseInt(monthNameMatch[5] || '0', 10);
+            let seconds = parseInt(monthNameMatch[6] || '0', 10);
+            let meridiem = (monthNameMatch[7] || '').toUpperCase();
+            let monthLookup = {
+                jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
+                jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12
+            };
+            let month = monthLookup[monthToken];
+
+            if (year < 100) year += 2000;
+            if (meridiem === 'PM' && hours < 12) hours += 12;
+            if (meridiem === 'AM' && hours === 12) hours = 0;
+
+            if (month && day >= 1 && day <= 31) {
+                return new Date(year, month - 1, day, hours, minutes, seconds);
+            }
+        }
+
+        let monthYearMatch = normalized.match(/^([A-Za-z]{3,})[\s\-./]*(\d{2,4})$/i);
+        if (monthYearMatch) {
+            let monthToken = monthYearMatch[1].slice(0, 3).toLowerCase();
+            let year = parseInt(monthYearMatch[2], 10);
+            let monthLookup = {
+                jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
+                jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12
+            };
+            let month = monthLookup[monthToken];
+
+            if (year < 100) year += 2000;
+            if (month) {
+                return new Date(year, month - 1, 1);
+            }
+        }
+
+        let dateTimeMatch = normalized.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?$/i);
+        if (dateTimeMatch) {
+            let day = parseInt(dateTimeMatch[1], 10);
+            let month = parseInt(dateTimeMatch[2], 10);
+            let year = parseInt(dateTimeMatch[3], 10);
+            let hours = parseInt(dateTimeMatch[4] || '0', 10);
+            let minutes = parseInt(dateTimeMatch[5] || '0', 10);
+            let seconds = parseInt(dateTimeMatch[6] || '0', 10);
+            let meridiem = (dateTimeMatch[7] || '').toUpperCase();
+
+            if (year < 100) year += 2000;
+
+            if (meridiem === 'PM' && hours < 12) hours += 12;
+            if (meridiem === 'AM' && hours === 12) hours = 0;
+
+            if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                return new Date(year, month - 1, day, hours, minutes, seconds);
+            }
+        }
+
+        let isoMatch = normalized.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+        if (isoMatch) {
+            let year = parseInt(isoMatch[1], 10);
+            let month = parseInt(isoMatch[2], 10);
+            let day = parseInt(isoMatch[3], 10);
+            let hours = parseInt(isoMatch[4] || '0', 10);
+            let minutes = parseInt(isoMatch[5] || '0', 10);
+            let seconds = parseInt(isoMatch[6] || '0', 10);
+
+            if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                return new Date(year, month - 1, day, hours, minutes, seconds);
+            }
+        }
+
+        return null;
+    }
+
+    function getDateCellValue(cell) {
+        if (!cell) return "";
+
+        let displayValue = cell.w || "";
+        let rawValue = cell.v;
+
+        if (displayValue && parseDateStr(displayValue)) return displayValue;
+        return rawValue;
+    }
+
+    function getCellDisplayValue(cell, isDateField) {
+        if (!cell) return "";
+
+        if (isDateField) return getDateCellValue(cell);
+
+        // Excel error cells like #N/A often expose raw numeric codes (for example 42).
+        // Prefer the formatted text so those rows can be filtered correctly.
+        if (cell.t === 'e' && cell.w) return cell.w;
+
+        return cell.v;
+    }
+
+    function parseNumericValue(value) {
+        if (value === null || value === undefined || value === "") return 0;
+        if (typeof value === 'number') return value;
+
+        let parsed = parseFloat(String(value).replace(/,/g, '').trim());
+        return isNaN(parsed) ? 0 : parsed;
+    }
+
+    function buildMonthKeyFromDate(dateObj) {
+        if (!dateObj || isNaN(dateObj)) return "Unknown Date";
+
+        let year = dateObj.getFullYear();
+        let monthNum = String(dateObj.getMonth() + 1).padStart(2, '0');
+        let monthName = dateObj.toLocaleString('default', { month: 'short' });
+        return `${year}-${monthNum} (${monthName})`;
+    }
+
+    function buildMonthKey(year, month) {
+        let monthNum = String(month).padStart(2, '0');
+        let monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        return `${year}-${monthNum} (${monthNames[month - 1]})`;
+    }
+
+    function extractMonthKeyFromValue(value) {
+        if (value === null || value === undefined || value === "") return null;
+
+        if (typeof value === 'number') {
+            let excelDate = XLSX.SSF.parse_date_code(value);
+            if (excelDate && excelDate.y && excelDate.m) {
+                return buildMonthKey(excelDate.y, excelDate.m);
+            }
+        }
+
+        if (value instanceof Date && !isNaN(value)) {
+            return buildMonthKey(value.getFullYear(), value.getMonth() + 1);
+        }
+
+        let text = String(value).replace(/\s+/g, ' ').trim();
+        if (!text) return null;
+
+        let monthLookup = {
+            jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
+            jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12
         };
 
-        const lineData = {
-            'CUSTOMER':{bss:[0,0,0,0,0,0,0],rail:[0,0,0,0,0,0,0],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},
-            'MSC':{bss:[933,1161,1335,1414,1414,1548,1744],rail:[500,500,500,500,500,500,500],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},
-            'COSCO':{bss:[0,0,0,0,0,0,0],rail:[1490,2120,1900,2320,-2980,2790,2790],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},
-            'HAPAG':{bss:[933,1161,1335,1414,1414,1548,1744],rail:[600,600,600,600,600,1200,1200],wh:[2095,2095,2095,2162,4187,2550,2550],fs:[2570,2570,2570,2612,4562,3650,3650],self:[910,910,910,800,2225,700,700]},
-            'CMA CGM':{bss:[933,910,1050,1120,1120,1290,1190],rail:[500,500,500,500,500,1000,1000],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},
-            'HMM LINE':{bss:[933,1161,1335,1414,1414,1548,1744],rail:[750,750,750,750,750,1250,1250],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},
-            'MAERSK':{bss:[5964,6632,9000,9630,9630,8552,10047],rail:[933,1161,1335,1414,1414,1548,1744],wh:[-1598,-1598,-1598,-923,1102,-1576,-1576],fs:[-1123,-1123,-1123,-473,1477,-476,-476],self:[-2243,-2243,-2243,-1768,-343,-2696,-2696]},
-            'OTHER':{bss:[0,0,0,0,0,0,0],rail:[0,0,0,0,0,0,0],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]}
+        let isoMatch = text.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+        if (isoMatch) {
+            let year = parseInt(isoMatch[1], 10);
+            let month = parseInt(isoMatch[2], 10);
+            if (month >= 1 && month <= 12) return buildMonthKey(year, month);
+        }
+
+        let dayFirstMatch = text.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/);
+        if (dayFirstMatch) {
+            let month = parseInt(dayFirstMatch[2], 10);
+            let year = parseInt(dayFirstMatch[3], 10);
+            if (year < 100) year += 2000;
+            if (month >= 1 && month <= 12) return buildMonthKey(year, month);
+        }
+
+        let monthNameDayMatch = text.match(/^(\d{1,2})[\s\-./]*([A-Za-z]{3,})[\s\-./]*(\d{2,4})/i);
+        if (monthNameDayMatch) {
+            let month = monthLookup[monthNameDayMatch[2].slice(0, 3).toLowerCase()];
+            let year = parseInt(monthNameDayMatch[3], 10);
+            if (year < 100) year += 2000;
+            if (month) return buildMonthKey(year, month);
+        }
+
+        let monthNameYearMatch = text.match(/^([A-Za-z]{3,})[\s\-./]*(\d{2,4})$/i);
+        if (monthNameYearMatch) {
+            let month = monthLookup[monthNameYearMatch[1].slice(0, 3).toLowerCase()];
+            let year = parseInt(monthNameYearMatch[2], 10);
+            if (year < 100) year += 2000;
+            if (month) return buildMonthKey(year, month);
+        }
+
+        return null;
+    }
+
+    function getParsedDateFromCell(cell) {
+        if (!cell) return null;
+
+        if (typeof cell.v === 'number') {
+            let excelDate = XLSX.SSF.parse_date_code(cell.v);
+            if (excelDate) {
+                return new Date(
+                    excelDate.y,
+                    excelDate.m - 1,
+                    excelDate.d,
+                    excelDate.H || 0,
+                    excelDate.M || 0,
+                    excelDate.S || 0
+                );
+            }
+        }
+
+        if (cell.v instanceof Date && !isNaN(cell.v)) {
+            return cell.v;
+        }
+
+        if (cell.w) {
+            let parsedDisplayDate = parseDateStr(cell.w);
+            if (parsedDisplayDate) return parsedDisplayDate;
+        }
+
+        return parseDateStr(cell.v);
+    }
+
+    function getMonthKeyFromCell(cell) {
+        if (!cell) return "Unknown Date";
+
+        let monthKeyFromDisplay = extractMonthKeyFromValue(cell.w);
+        if (monthKeyFromDisplay) return monthKeyFromDisplay;
+
+        let monthKeyFromRaw = extractMonthKeyFromValue(cell.v);
+        if (monthKeyFromRaw) return monthKeyFromRaw;
+
+        return "Unknown Date";
+    }
+
+    function isHeaderRow(mappedRow, config) {
+        return Object.entries(config.headerChecks).every(([fieldName, allowedValues]) => {
+            let cellValue = String(mappedRow[fieldName] || "").trim().toLowerCase();
+            return allowedValues.includes(cellValue);
+        });
+    }
+
+    function mapWorksheetRows(sheet, config) {
+        if (!sheet['!ref']) return [];
+
+        let range = XLSX.utils.decode_range(sheet['!ref']);
+        let mappedRows = [];
+
+        for (let rowNumber = range.s.r; rowNumber <= range.e.r; rowNumber++) {
+            let mappedRow = {};
+            let hasAnyValue = false;
+
+            Object.keys(config.columnMap).forEach(columnLetter => {
+                let cellAddress = `${columnLetter}${rowNumber + 1}`;
+                let cell = sheet[cellAddress];
+                let fieldName = config.columnMap[columnLetter];
+                let value = "";
+
+                if (cell) {
+                    value = getCellDisplayValue(cell, config.dateColumns.has(fieldName));
+                }
+
+                mappedRow[fieldName] = value;
+
+                if (String(value || "").trim() !== "") {
+                    hasAnyValue = true;
+                }
+            });
+
+            mappedRow._monthKey = getMonthKeyFromCell(sheet[`${config.monthCellLetter}${rowNumber + 1}`]);
+            mappedRow._parsedDate = getParsedDateFromCell(sheet[`${config.monthCellLetter}${rowNumber + 1}`]);
+            mappedRow._gateOutMonthKey = getMonthKeyFromCell(sheet[`AD${rowNumber + 1}`]);
+            mappedRow._gateOutParsedDate = getParsedDateFromCell(sheet[`AD${rowNumber + 1}`]);
+
+            if (!hasAnyValue) continue;
+
+            if (isHeaderRow(mappedRow, config)) {
+                continue;
+            }
+
+            mappedRows.push(mappedRow);
+        }
+
+        return mappedRows;
+    }
+
+    function formatDateStandard(dateObj) {
+        let day = String(dateObj.getDate()).padStart(2, '0');
+        let month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        let year = dateObj.getFullYear();
+        return `${day}-${month}-${year}`;
+    }
+
+    function normalizeText(value) {
+        return String(value || "").trim();
+    }
+
+    function normalizeKey(value) {
+        return normalizeText(value).toUpperCase();
+    }
+
+    function getDefinitionsForReportType(reportType) {
+        return reportType === 'import' ? importReportDefinitions : exportReportDefinitions;
+    }
+
+    function switchDataMode(reportType) {
+        activeReportType = reportType;
+        document.getElementById('importToggleBtn').classList.toggle('active', reportType === 'import');
+        document.getElementById('exportToggleBtn').classList.toggle('active', reportType === 'export');
+        document.getElementById('importUploadSection').style.display = reportType === 'import' ? 'block' : 'none';
+        document.getElementById('exportUploadSection').style.display = reportType === 'export' ? 'block' : 'none';
+
+        let cached = loadedDataCache[reportType];
+        if (cached.rows.length && cached.config) {
+            currentRows = cached.rows;
+            currentConfig = cached.config;
+            activeReportKey = 'commodity';
+            renderReportButtons(reportType);
+            renderSelectedReport('commodity');
+            document.getElementById('downloadAllBtn').style.display = 'block';
+            document.getElementById('downloadCombinedBtn').style.display = loadedDataCache.import.rows.length && loadedDataCache.export.rows.length ? 'block' : 'none';
+        } else {
+            currentRows = [];
+            currentConfig = null;
+            document.getElementById('output').innerHTML = '';
+            document.getElementById('reportToolbar').style.display = 'none';
+            document.getElementById('downloadBtn').style.display = 'none';
+            document.getElementById('downloadOtherBtn').style.display = 'none';
+            document.getElementById('downloadAllBtn').style.display = 'none';
+            document.getElementById('downloadCombinedBtn').style.display = loadedDataCache.import.rows.length && loadedDataCache.export.rows.length ? 'block' : 'none';
+            document.getElementById('dateRangeHeader').innerText = `${reportConfigs[reportType].label} data not loaded`;
+        }
+    }
+
+    function initializeFromEmbeddedData(payload) {
+        if (!payload) return;
+        if (payload.loadedDataCache) loadedDataCache = payload.loadedDataCache;
+        if (payload.activeReportType) activeReportType = payload.activeReportType;
+        if (payload.activeReportKey) activeReportKey = payload.activeReportKey;
+        switchDataMode(activeReportType || 'import');
+        if (currentRows.length) {
+            renderSelectedReport(activeReportKey || 'commodity');
+        }
+    }
+
+    function formatMonthLabel(month) {
+        if (month !== "Unknown Date") {
+            let parts = month.split(' ');
+            let yearStr = parts[0].split('-')[0];
+            let monthName = parts[1].replace(/[()]/g, '');
+            return `${monthName} ${yearStr}`;
+        }
+        return month;
+    }
+
+    function getSizeBucket(sizeValue) {
+        let normalized = normalizeText(sizeValue).toUpperCase();
+        if (normalized.includes("20")) return "20";
+        if (normalized.includes("40")) return "40";
+        return "";
+    }
+
+    function formatPercent(value, total) {
+        if (!total || total <= 0) return '-';
+        return `${Math.round((value / total) * 100)}%`;
+    }
+
+    function normalizeImportLineName(lineValue) {
+        let normalized = normalizeKey(lineValue);
+        if (!normalized || normalized === "#N/A") return "";
+        return importLineMap[normalized] || normalizeText(lineValue);
+    }
+
+    function shouldIgnoreMonth(monthKey) {
+        return !monthKey || monthKey === "Unknown Date";
+    }
+
+    function renderReportButtons(reportType) {
+        let toolbar = document.getElementById('reportToolbar');
+        let title = document.getElementById('reportToolbarTitle');
+        let buttonsContainer = document.getElementById('reportButtons');
+        let definitions = getDefinitionsForReportType(reportType);
+
+        if (!definitions.length) {
+            toolbar.style.display = 'none';
+            return;
+        }
+
+        title.innerText = `${reportConfigs[reportType].label} Reports`;
+        buttonsContainer.innerHTML = definitions
+            .map(def => `<button class="report-btn${def.key === activeReportKey ? ' active' : ''}" data-report-key="${def.key}">${def.label}</button>`)
+            .join('');
+
+        buttonsContainer.querySelectorAll('.report-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                renderSelectedReport(button.getAttribute('data-report-key'));
+            });
+        });
+
+        toolbar.style.display = 'block';
+    }
+
+    function buildSortableHeaderCell(label, columnIndex) {
+        let indicator = '';
+        if (currentTableSort.columnIndex === columnIndex) {
+            indicator = currentTableSort.direction === 'asc' ? 'A-Z' : 'Z-A';
+        }
+        return `<th><button class="sort-btn" onclick="sortCurrentTable(${columnIndex})">${label}<span class="sort-indicator">${indicator}</span></button></th>`;
+    }
+
+    function parseSortableValue(text) {
+        let trimmed = String(text || '').trim();
+        if (!trimmed || trimmed === '-') return { type: 'empty', value: '' };
+        if (trimmed.endsWith('%')) {
+            let num = parseFloat(trimmed.replace('%', ''));
+            if (!isNaN(num)) return { type: 'number', value: num };
+        }
+        let num = parseFloat(trimmed.replace(/,/g, ''));
+        if (!isNaN(num) && /^-?\d+(\.\d+)?%?$/.test(trimmed.replace(/,/g, ''))) {
+            return { type: 'number', value: num };
+        }
+        return { type: 'string', value: trimmed.toLowerCase() };
+    }
+
+    function sortCurrentTable(columnIndex) {
+        let table = document.getElementById('summaryTable');
+        if (!table) return;
+
+        let tbody = table.querySelector('tbody');
+        if (!tbody) return;
+
+        let rows = Array.from(tbody.querySelectorAll('tr'));
+        if (!rows.length) return;
+
+        let grandTotalRow = rows.pop();
+        let direction = 'asc';
+        if (currentTableSort.columnIndex === columnIndex && currentTableSort.direction === 'asc') {
+            direction = 'desc';
+        }
+        currentTableSort = { columnIndex, direction };
+
+        rows.sort((a, b) => {
+            let aVal = parseSortableValue(a.children[columnIndex]?.innerText || '');
+            let bVal = parseSortableValue(b.children[columnIndex]?.innerText || '');
+
+            if (aVal.type === 'empty' && bVal.type !== 'empty') return 1;
+            if (bVal.type === 'empty' && aVal.type !== 'empty') return -1;
+
+            if (aVal.type === 'number' && bVal.type === 'number') {
+                return direction === 'asc' ? aVal.value - bVal.value : bVal.value - aVal.value;
+            }
+
+            let compare = String(aVal.value).localeCompare(String(bVal.value), undefined, { numeric: true, sensitivity: 'base' });
+            return direction === 'asc' ? compare : -compare;
+        });
+
+        tbody.innerHTML = '';
+        rows.forEach(row => tbody.appendChild(row));
+        tbody.appendChild(grandTotalRow);
+
+        let headerButtons = table.querySelectorAll('thead .sort-btn');
+        headerButtons.forEach((btn, idx) => {
+            let span = btn.querySelector('.sort-indicator');
+            if (!span) return;
+            span.textContent = currentTableSort.columnIndex === idx ? (currentTableSort.direction === 'asc' ? 'A-Z' : 'Z-A') : '';
+        });
+    }
+
+    function hasAnyLoadedData() {
+        return loadedDataCache.import.rows.length > 0 || loadedDataCache.export.rows.length > 0;
+    }
+
+    function updateLoadingProgress(percent, statusText) {
+        let safePercent = Math.max(0, Math.min(100, Math.round(percent)));
+        document.getElementById('loadingProgressFill').style.width = `${safePercent}%`;
+        document.getElementById('loadingProgressValue').innerText = `${safePercent}%`;
+        if (statusText) {
+            document.getElementById('loadingStatus').innerText = statusText;
+        }
+    }
+
+    function showLoadingOverlay(statusText = 'Preparing file') {
+        clearInterval(loadingProgressTimer);
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        updateLoadingProgress(0, statusText);
+    }
+
+    function animateLoadingTo(targetPercent, statusText) {
+        clearInterval(loadingProgressTimer);
+        let current = parseInt(document.getElementById('loadingProgressValue').innerText, 10) || 0;
+        loadingProgressTimer = setInterval(() => {
+            if (current >= targetPercent) {
+                clearInterval(loadingProgressTimer);
+                loadingProgressTimer = null;
+                return;
+            }
+            current += 1;
+            updateLoadingProgress(current, statusText);
+        }, 20);
+    }
+
+    function hideLoadingOverlay() {
+        clearInterval(loadingProgressTimer);
+        updateLoadingProgress(100, 'Completed');
+        setTimeout(() => {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }, 200);
+    }
+
+    function collectReportSnapshots() {
+        let previousState = {
+            activeReportType,
+            activeReportKey,
+            currentRows,
+            currentConfig,
+            dateHeader: document.getElementById('dateRangeHeader').innerHTML,
+            outputHtml: document.getElementById('output').innerHTML
         };
-        ['OOCL','SEABRIDGE','ONE LINE'].forEach(k=>lineData[k]=lineData['OTHER']);
 
-        let tableCount = 0;
+        let snapshots = { import: [], export: [] };
 
-        window.onload = () => {
-            fetchSheetData();
-        };
+        ['import', 'export'].forEach(reportType => {
+            let cache = loadedDataCache[reportType];
+            if (!cache.rows.length || !cache.config) return;
 
-        function fetchSheetData() {
-            const sel = document.getElementById('cloudHistory');
-            sel.innerHTML = '<option value="">-- Syncing... --</option>';
+            activeReportType = reportType;
+            currentRows = cache.rows;
+            currentConfig = cache.config;
 
-            window.handleGvizResponse = function(j) {
-                if(!j || !j.table) return;
-                sheetRecords = j.table.rows.map(r => {
-                    const c = r.c;
-                    if(!c || c.length < 5) return null;
-                    const jStr = c[4]?.v || "";
-                    if(!jStr.startsWith('{')) return null;
-                    try {
-                        const parsed = JSON.parse(jStr);
-                        return {
-                            name: c[2]?.v || "UNKNOWN",
-                            parsedData: parsed 
-                        };
-                    } catch(e) { return null; }
-                }).filter(r => r !== null);
-                
-                sheetRecords.sort((a, b) => {
-                    const nameA = (a.name || "").toString();
-                    const nameB = (b.name || "").toString();
-                    return nameA.localeCompare(nameB);
+            getDefinitionsForReportType(reportType).forEach(def => {
+                renderSelectedReport(def.key);
+                snapshots[reportType].push({
+                    key: def.key,
+                    label: def.label,
+                    title: document.getElementById('dateRangeHeader').innerText,
+                    tableHtml: document.getElementById('output').innerHTML
                 });
-                
-                repopulateDropdowns();
-                addNewTable();
-            };
-            const s = document.createElement('script');
-            s.src = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=responseHandler:handleGvizResponse&tq=SELECT%20A,B,C,D,E&t=${new Date().getTime()}`;
-            document.body.appendChild(s);
-        }
-
-        function repopulateDropdowns() {
-            const sel = document.getElementById('cloudHistory');
-            sel.innerHTML = '<option value="">-- All Records --</option>';
-            sheetRecords.forEach((r, i) => {
-                const isApp = (r.parsedData.isApproval === true || r.parsedData.isApproval === "true");
-                if(!isApp) { 
-                    const opt = document.createElement('option');
-                    opt.value = i;
-                    opt.text = r.name;
-                    sel.appendChild(opt);
-                }
             });
-        }
+        });
 
-        function loadRecordFromDropdown() {
-            const index = document.getElementById('cloudHistory').value;
-            if (index === "") return;
-            const r = sheetRecords[index];
-            if (!r) return;
-            const d = r.parsedData;
+        activeReportType = previousState.activeReportType;
+        activeReportKey = previousState.activeReportKey;
+        currentRows = previousState.currentRows;
+        currentConfig = previousState.currentConfig;
+        document.getElementById('dateRangeHeader').innerHTML = previousState.dateHeader;
+        document.getElementById('output').innerHTML = previousState.outputHtml;
+        renderReportButtons(activeReportType);
+        renderSelectedReport(activeReportKey);
 
-            const setVal = (id, val) => {
-                const el = document.getElementById(id);
-                if(el) {
-                    if(el.tagName === 'SELECT') el.value = val || "";
-                    else el.innerText = val || "";
-                }
-            };
+        return snapshots;
+    }
 
-            setVal('ui_customerName', d.basic?.cust);
-            setVal('ui_commodity', d.basic?.comm);
-            setVal('ui_billingTerms', d.basic?.bill);
-            setVal('ui_salesPerson', d.basic?.ver);
-            setVal('ui_customerType', d.basic?.type);
-            setVal('ui_volMonth', d.basic?.vol);
-            setVal('ui_creditDays', d.basic?.cred);
-            
-            setVal('ui_remTHC', d.remarks?.thc);
-            setVal('ui_remSpecial', d.remarks?.special);
+    function renderGenericMatrixTable(rowHeader, rowOrder, monthOrder, matrixData, titleSuffix, includeOtherDownload, tableClass = "") {
+        currentTableSort = { columnIndex: null, direction: 'asc' };
+        let monthlyColumnTotals = {};
+        monthOrder.forEach(month => { monthlyColumnTotals[month] = 0; });
 
-            let transRem = d.transport && d.transport.length > 0 ? d.transport.map(t => t.remarks).join('\n') : '';
-            setVal('ui_transVendor', transRem);
+        rowOrder.forEach(rowName => {
+            monthOrder.forEach(month => {
+                monthlyColumnTotals[month] += matrixData[rowName]?.[month] || 0;
+            });
+        });
 
-            let incRem = d.incentives && d.incentives.length > 0 ? d.incentives.map(i => i.remarks).join('\n') : '';
-            setVal('ui_chaIncRem', incRem);
-            setVal('ui_incClaimBy', incRem);
+        let visibleMonths = monthOrder.filter(month => !(month === "Unknown Date" && monthlyColumnTotals[month] === 0));
+        let absoluteGrandTotal = 0;
+        let html = `<table id="summaryTable" class="${tableClass}"><thead><tr>${buildSortableHeaderCell(rowHeader, 0)}`;
 
-            let shippersText = d.customers && d.customers.length > 0 ? d.customers.map(c => c.name).join('\n') : '';
-            setVal('shippers_content_box', shippersText);
-        }
+        visibleMonths.forEach((month, index) => {
+            html += buildSortableHeaderCell(formatMonthLabel(month), index + 1);
+        });
+        html += buildSortableHeaderCell('Grand Total TEUs', visibleMonths.length + 1);
+        html += `</tr></thead><tbody>`;
 
-        function updateTable(tId) {
-            const type = document.getElementById(`sel_type_${tId}`).value;
-            const line = document.getElementById(`sel_line_${tId}`).value;
+        rowOrder.forEach(rowName => {
+            let rowTotal = 0;
+            let hasData = false;
+            let rowHtml = `<tr><td>${rowName}</td>`;
 
-            document.getElementById(`lbl_stream_${tId}`).innerText = line + "-MUNDRA";
+            visibleMonths.forEach(month => {
+                let value = matrixData[rowName]?.[month] || 0;
+                rowTotal += value;
+                rowHtml += `<td>${value > 0 ? value : '-'}</td>`;
+                if (value > 0) hasData = true;
+            });
 
-            const sData = subsidyData[type] || subsidyData['FACTORY'];
-            const lData = lineData[line] || lineData['OTHER'];
+            rowHtml += `<td><strong>${rowTotal > 0 ? rowTotal : '-'}</strong></td></tr>`;
+            absoluteGrandTotal += rowTotal;
 
-            for (let i = 0; i < 7; i++) {
-                const p = slabs[i].p;
-                const m = slabs[i].m;
-                const eis = (i >= 5) ? 2000 : 1000;
-                
-                const disc = parseInt(document.getElementById(`disc_${tId}_${i}`).innerText) || 0;
-                const inc = parseInt(document.getElementById(`inc_${tId}_${i}`).innerText) || 0;
-                const subfac = parseInt(document.getElementById(`subfac_${tId}_${i}`).innerText) || 0;
-                
-                const slb = lData.bss[i];   
-                const slr = lData.rail[i];  
-                const sub = sData[i];       
-                
-                const slw = lData.wh[i];    
-                const slf = lData.fs[i];    
-                const sls = lData.self[i];  
+            if (hasData) html += rowHtml;
+        });
 
-                const base_deductions = disc + inc + slb + slr + sub + subfac;
-                const margin_wh = m - base_deductions - slw;
-                const margin_fs = m - base_deductions - slf;
-                const margin_self = m - base_deductions - sls;
+        html += `<tr class="grand-total"><td>MONTHLY TOTALS</td>`;
+        visibleMonths.forEach(month => {
+            html += `<td>${monthlyColumnTotals[month]}</td>`;
+        });
+        html += `<td>${absoluteGrandTotal}</td></tr></tbody></table>`;
 
-                document.getElementById(`pub_${tId}_${i}`).innerText = p;
-                document.getElementById(`rm_${tId}_${i}`).innerText = m;
-                document.getElementById(`eis_${tId}_${i}`).innerText = eis;
-                
-                formatNegative(document.getElementById(`slb_${tId}_${i}`), slb);
-                formatNegative(document.getElementById(`slr_${tId}_${i}`), slr);
-                formatNegative(document.getElementById(`sub_${tId}_${i}`), sub);
-                
-                formatNegative(document.getElementById(`slw_${tId}_${i}`), slw);
-                formatNegative(document.getElementById(`slf_${tId}_${i}`), slf);
-                formatNegative(document.getElementById(`sls_${tId}_${i}`), sls);
-                
-                formatNegative(document.getElementById(`mw_${tId}_${i}`), margin_wh);
-                formatNegative(document.getElementById(`mf_${tId}_${i}`), margin_fs);
-                formatNegative(document.getElementById(`ms_${tId}_${i}`), margin_self);
+        document.getElementById('output').innerHTML = html;
+        document.getElementById('downloadBtn').style.display = 'block';
+        document.getElementById('downloadOtherBtn').style.display = includeOtherDownload && Object.keys(otherItemsLog).length > 0 ? 'block' : 'none';
+        activeDownloadName = titleSuffix;
+    }
+
+    function renderVolumesHandledTable(monthOrder, totalsByMonth, titleSuffix, labels = {}) {
+        currentTableSort = { columnIndex: null, direction: 'asc' };
+        let primary20 = labels.primary20 || 'HTPL 20';
+        let primary40 = labels.primary40 || 'HTPL 40';
+        let primaryTeus = labels.primaryTeus || 'HTPL TEUs';
+        let primaryPct = labels.primaryPct || 'HTPL %';
+        let secondary20 = labels.secondary20 || 'OTHERS 20';
+        let secondary40 = labels.secondary40 || 'OTHERS 40';
+        let secondaryTeus = labels.secondaryTeus || 'OTHERS TEUs';
+        let secondaryPct = labels.secondaryPct || 'OTHERS %';
+
+        let visibleMonths = monthOrder.filter(month => {
+            let data = totalsByMonth[month];
+            if (!data) return false;
+            let total = data.htpl20 + data.htpl40 + data.htplTeus + data.others20 + data.others40 + data.othersTeus + data.grandTeus;
+            return !(month === "Unknown Date" && total === 0);
+        });
+
+        let html = `<table id="summaryTable"><thead><tr>`;
+        html += buildSortableHeaderCell('Month', 0);
+        html += buildSortableHeaderCell(primary20, 1);
+        html += buildSortableHeaderCell(primary40, 2);
+        html += buildSortableHeaderCell(primaryTeus, 3);
+        html += buildSortableHeaderCell(primaryPct, 4);
+        html += buildSortableHeaderCell(secondary20, 5);
+        html += buildSortableHeaderCell(secondary40, 6);
+        html += buildSortableHeaderCell(secondaryTeus, 7);
+        html += buildSortableHeaderCell(secondaryPct, 8);
+        html += buildSortableHeaderCell('Grand Total TEUs', 9);
+        html += `</tr></thead><tbody>`;
+
+        let grand = { htpl20: 0, htpl40: 0, htplTeus: 0, others20: 0, others40: 0, othersTeus: 0, grandTeus: 0 };
+
+        visibleMonths.forEach(month => {
+            let data = totalsByMonth[month] || { htpl20: 0, htpl40: 0, htplTeus: 0, others20: 0, others40: 0, othersTeus: 0, grandTeus: 0 };
+            grand.htpl20 += data.htpl20;
+            grand.htpl40 += data.htpl40;
+            grand.htplTeus += data.htplTeus;
+            grand.others20 += data.others20;
+            grand.others40 += data.others40;
+            grand.othersTeus += data.othersTeus;
+            grand.grandTeus += data.grandTeus;
+
+            let htplPct = formatPercent(data.htplTeus, data.grandTeus);
+            let othersPct = formatPercent(data.othersTeus, data.grandTeus);
+
+            html += `<tr><td>${formatMonthLabel(month)}</td><td>${data.htpl20 || '-'}</td><td>${data.htpl40 || '-'}</td><td>${data.htplTeus || '-'}</td><td class="pct-cell">${htplPct}</td><td>${data.others20 || '-'}</td><td>${data.others40 || '-'}</td><td>${data.othersTeus || '-'}</td><td class="pct-cell">${othersPct}</td><td><strong>${data.grandTeus || '-'}</strong></td></tr>`;
+        });
+
+        let totalHtplPct = formatPercent(grand.htplTeus, grand.grandTeus);
+        let totalOthersPct = formatPercent(grand.othersTeus, grand.grandTeus);
+
+        html += `<tr class="grand-total"><td>MONTHLY TOTALS</td><td>${grand.htpl20}</td><td>${grand.htpl40}</td><td>${grand.htplTeus}</td><td class="pct-cell">${totalHtplPct}</td><td>${grand.others20}</td><td>${grand.others40}</td><td>${grand.othersTeus}</td><td class="pct-cell">${totalOthersPct}</td><td>${grand.grandTeus}</td></tr>`;
+        html += `</tbody></table>`;
+
+        document.getElementById('output').innerHTML = html;
+        document.getElementById('downloadBtn').style.display = 'block';
+        document.getElementById('downloadOtherBtn').style.display = 'none';
+        activeDownloadName = titleSuffix;
+    }
+
+    function renderExportLoadedTable(monthOrder, totalsByMonth, titleSuffix) {
+        currentTableSort = { columnIndex: null, direction: 'asc' };
+        let html = `<table id="summaryTable"><thead><tr>`;
+        html += buildSortableHeaderCell('Month', 0);
+        html += buildSortableHeaderCell('20', 1);
+        html += buildSortableHeaderCell('40', 2);
+        html += buildSortableHeaderCell('20 %', 3);
+        html += buildSortableHeaderCell('40 %', 4);
+        html += buildSortableHeaderCell('Total TEUs', 5);
+        html += `</tr></thead><tbody>`;
+
+        let grand = { c20: 0, c40: 0, teus: 0 };
+
+        monthOrder.forEach(month => {
+            let data = totalsByMonth[month] || { c20: 0, c40: 0, teus: 0 };
+            let totalUnits = data.c20 + data.c40;
+            let pct20 = formatPercent(data.c20, totalUnits);
+            let pct40 = formatPercent(data.c40, totalUnits);
+
+            grand.c20 += data.c20;
+            grand.c40 += data.c40;
+            grand.teus += data.teus;
+
+            html += `<tr><td>${formatMonthLabel(month)}</td><td>${data.c20 || '-'}</td><td>${data.c40 || '-'}</td><td class="pct-cell">${pct20}</td><td class="pct-cell">${pct40}</td><td><strong>${data.teus || '-'}</strong></td></tr>`;
+        });
+
+        let grandUnits = grand.c20 + grand.c40;
+        let grandPct20 = formatPercent(grand.c20, grandUnits);
+        let grandPct40 = formatPercent(grand.c40, grandUnits);
+
+        html += `<tr class="grand-total"><td>MONTHLY TOTALS</td><td>${grand.c20}</td><td>${grand.c40}</td><td class="pct-cell">${grandPct20}</td><td class="pct-cell">${grandPct40}</td><td>${grand.teus}</td></tr>`;
+        html += `</tbody></table>`;
+
+        document.getElementById('output').innerHTML = html;
+        document.getElementById('downloadBtn').style.display = 'block';
+        document.getElementById('downloadOtherBtn').style.display = 'none';
+        activeDownloadName = titleSuffix;
+    }
+
+    function renderExportMscNonMscTable(monthOrder, totalsByMonth, titleSuffix) {
+        currentTableSort = { columnIndex: null, direction: 'asc' };
+        let html = `<table id="summaryTable"><thead><tr>`;
+        html += buildSortableHeaderCell('Month', 0);
+        html += buildSortableHeaderCell('20', 1);
+        html += buildSortableHeaderCell('40', 2);
+        html += buildSortableHeaderCell('TEUs', 3);
+        html += buildSortableHeaderCell('MSC Share %', 4);
+        html += buildSortableHeaderCell('20', 5);
+        html += buildSortableHeaderCell('40', 6);
+        html += buildSortableHeaderCell('TEUs', 7);
+        html += buildSortableHeaderCell('NON MSC Share %', 8);
+        html += buildSortableHeaderCell('Total in TEUs', 9);
+        html += `</tr></thead><tbody>`;
+
+        let grand = { m20: 0, m40: 0, mTeus: 0, n20: 0, n40: 0, nTeus: 0, totalTeus: 0 };
+
+        monthOrder.forEach(month => {
+            let data = totalsByMonth[month] || { m20: 0, m40: 0, mTeus: 0, n20: 0, n40: 0, nTeus: 0, totalTeus: 0 };
+            let mPct = formatPercent(data.mTeus, data.totalTeus);
+            let nPct = formatPercent(data.nTeus, data.totalTeus);
+
+            grand.m20 += data.m20;
+            grand.m40 += data.m40;
+            grand.mTeus += data.mTeus;
+            grand.n20 += data.n20;
+            grand.n40 += data.n40;
+            grand.nTeus += data.nTeus;
+            grand.totalTeus += data.totalTeus;
+
+            html += `<tr><td>${formatMonthLabel(month)}</td><td>${data.m20 || '-'}</td><td>${data.m40 || '-'}</td><td>${data.mTeus || '-'}</td><td class="pct-cell">${mPct}</td><td>${data.n20 || '-'}</td><td>${data.n40 || '-'}</td><td>${data.nTeus || '-'}</td><td class="pct-cell">${nPct}</td><td><strong>${data.totalTeus || '-'}</strong></td></tr>`;
+        });
+
+        let gmPct = formatPercent(grand.mTeus, grand.totalTeus);
+        let gnPct = formatPercent(grand.nTeus, grand.totalTeus);
+
+        html += `<tr class="grand-total"><td>MONTHLY TOTALS</td><td>${grand.m20}</td><td>${grand.m40}</td><td>${grand.mTeus}</td><td class="pct-cell">${gmPct}</td><td>${grand.n20}</td><td>${grand.n40}</td><td>${grand.nTeus}</td><td class="pct-cell">${gnPct}</td><td>${grand.totalTeus}</td></tr>`;
+        html += `</tbody></table>`;
+
+        document.getElementById('output').innerHTML = html;
+        document.getElementById('downloadBtn').style.display = 'block';
+        document.getElementById('downloadOtherBtn').style.display = 'none';
+        activeDownloadName = titleSuffix;
+    }
+
+    function renderKilaraipurTable(monthOrder, totalsByMonth, titleSuffix) {
+        currentTableSort = { columnIndex: null, direction: 'asc' };
+        let html = `<table id="summaryTable"><thead><tr>`;
+        html += buildSortableHeaderCell('Month', 0);
+        html += buildSortableHeaderCell('TEUs', 1);
+        html += buildSortableHeaderCell('Kilaraipur %', 2);
+        html += buildSortableHeaderCell('OTHER CFS TEUs', 3);
+        html += buildSortableHeaderCell('OTHER CFS %', 4);
+        html += buildSortableHeaderCell('Total TEUs', 5);
+        html += `</tr></thead><tbody>`;
+
+        let grand = { kTeus: 0, oTeus: 0, totalTeus: 0 };
+
+        monthOrder.forEach(month => {
+            let data = totalsByMonth[month] || { kTeus: 0, oTeus: 0, totalTeus: 0 };
+            grand.kTeus += data.kTeus;
+            grand.oTeus += data.oTeus;
+            grand.totalTeus += data.totalTeus;
+            let kPct = formatPercent(data.kTeus, data.totalTeus);
+            let oPct = formatPercent(data.oTeus, data.totalTeus);
+
+            html += `<tr><td>${formatMonthLabel(month)}</td><td>${data.kTeus || '-'}</td><td class="pct-cell">${kPct}</td><td>${data.oTeus || '-'}</td><td class="pct-cell">${oPct}</td><td><strong>${data.totalTeus || '-'}</strong></td></tr>`;
+        });
+
+        let gKPct = formatPercent(grand.kTeus, grand.totalTeus);
+        let gOPct = formatPercent(grand.oTeus, grand.totalTeus);
+
+        html += `<tr class="grand-total"><td>MONTHLY TOTALS</td><td>${grand.kTeus}</td><td class="pct-cell">${gKPct}</td><td>${grand.oTeus}</td><td class="pct-cell">${gOPct}</td><td>${grand.totalTeus}</td></tr>`;
+        html += `</tbody></table>`;
+
+        document.getElementById('output').innerHTML = html;
+        document.getElementById('downloadBtn').style.display = 'block';
+        document.getElementById('downloadOtherBtn').style.display = 'none';
+        activeDownloadName = titleSuffix;
+    }
+
+    function buildCommodityReport(rows, config) {
+        let pivotData = {};
+        let uniqueMonths = new Set();
+
+        otherItemsLog = {};
+
+        let allCommodities = [...allGroupNames, "OTHER"];
+        allCommodities.forEach(g => { pivotData[g] = {}; });
+
+        rows.forEach(row => {
+            let origDesc = normalizeText(row[config.commodityField]);
+            let commodityCol = origDesc.toLowerCase();
+            let monthKey = row._monthKey || "Unknown Date";
+            let teuValue = parseNumericValue(row[config.teusField]);
+
+            uniqueMonths.add(monthKey);
+
+            if (teuValue <= 0) return;
+
+            let assignedGroup = "OTHER";
+            let exactMatchGroup = exactCommodityGroupMap[origDesc.toUpperCase()];
+            if (exactMatchGroup) {
+                assignedGroup = exactMatchGroup;
             }
-        }
 
-        function formatNegative(el, val) {
-            el.innerText = val;
-            if (val < 0) el.classList.add('text-red-600');
-            else el.classList.remove('text-red-600');
-        }
-
-        function updateColor(tId) {
-            const typeVal = document.getElementById(`sel_type_${tId}`).value;
-            const tdType = document.getElementById(`td_type_${tId}`);
-            
-            tdType.classList.remove("bg-yellow-200", "bg-green-200", "bg-blue-200", "bg-purple-200");
-            if(typeVal === "FACTORY") tdType.classList.add("bg-yellow-200");
-            else if(typeVal === "OWPL") tdType.classList.add("bg-green-200");
-            else if(typeVal === "PSWC") tdType.classList.add("bg-blue-200");
-            else if(typeVal === "Double -2x20\"") tdType.classList.add("bg-purple-200");
-        }
-
-        function deleteSelectedTables() {
-            const checkboxes = document.querySelectorAll('.table-delete-checkbox:checked');
-            checkboxes.forEach(cb => {
-                const wrapper = document.getElementById(cb.value);
-                if (wrapper) wrapper.remove();
-            });
-        }
-
-        function addNewTable() {
-            const tId = tableCount++;
-            const container = document.getElementById('dynamic_tables_container');
-            
-            let html = `
-                <div class="flex items-start gap-3 mb-6" id="wrapper_${tId}">
-                    <input type="checkbox" class="table-delete-checkbox w-5 h-5 mt-2 cursor-pointer flex-shrink-0 accent-red-600" value="wrapper_${tId}" title="Select to delete this table">
-                    <div class="flex-grow w-full overflow-x-auto">
-                        <table class="data-table tariff-zoom" id="tariff_block_${tId}" style="margin-bottom: 0;">
-                            <colgroup>
-                                <col span="16" style="width: 6.25%;">
-                            </colgroup>
-                            <tbody>
-                                <tr>
-                                    <td colspan="3" class="label-cell">Shipping Line & Stream::</td>
-                                    <td colspan="3" id="lbl_stream_${tId}" class="font-bold text-blue-900 data-cell bg-yellow-200">COSCO-MUNDRA</td>
-                                    <td colspan="2" class="label-cell">Stuffing Location::</td>
-                                    <td colspan="3" id="td_type_${tId}" class="data-cell bg-yellow-200" style="padding: 0;">
-                                        <select id="sel_type_${tId}" onchange="updateTable(${tId}); updateColor(${tId});" class="cell-dropdown">
-                                            <option value="FACTORY">FACTORY</option>
-                                            <option value="OWPL">OWPL</option>
-                                            <option value="PSWC">PSWC</option>
-                                            <option value="Double -2x20&quot;">Double -2x20"</option>
-                                        </select>
-                                    </td>
-                                    <td colspan="2" class="label-cell">Line:</td>
-                                    <td colspan="3" class="data-cell bg-blue-50" style="padding: 0;">
-                                        <select id="sel_line_${tId}" onchange="updateTable(${tId}); updateColor(${tId});" class="cell-dropdown"></select>
-                                    </td>
-                                </tr>
-                        <tr>
-                            <td class="header-cell">Weight Slab</td>
-                            <td class="header-cell">Public Tariff<br>Rail Freight</td>
-                            <td class="header-cell">Railway Margins<br><span class="text-xs font-normal">(01-10-23) Including EIS Charges</span></td>
-                            <td class="header-cell">EIS Charges</td>
-                            <td class="header-cell">Discount from Haulage<br><span class="text-xs font-normal">(For Net billing) Amt</span></td>
-                            <td class="header-cell">Incentive<br><span class="text-xs font-normal">(CHA/FRW/SHIPPER) Amt</span></td>
-                            <td class="header-cell">Line Incentive</td>
-                            <td class="header-cell">BSS Discount</td>
-                            <td class="header-cell">Transport Subsidy<br>for OWPL/PSWC</td>
-                            <td class="header-cell">Transport Subsidy<br>Factory</td>
-                            <td class="header-cell">THC Subsidy<br>(WH Stuffing)</td>
-                            <td class="header-cell">THC Subsidy<br>(Factory)</td>
-                            <td class="header-cell">THC Subsidy<br>(Self Seal)</td>
-                            <td class="header-cell">Margin<br>(WH Stuffing)</td>
-                            <td class="header-cell">Margin<br>(Factory Stuff)</td>
-                            <td class="header-cell">Margin<br>(Self Seal)</td>
-                        </tr>
-            `;
-
-            for (let i = 0; i < 7; i++) {
-                const label = slabs[i].label;
-                const rowClass = i >= 5 ? 'bg-gray-50' : '';
-                const labelClass = i >= 5 ? 'bg-gray-200' : '';
-                
-                html += `
-                        <tr>
-                            <td class="label-cell text-center ${labelClass}" contenteditable="true">${label}</td>
-                            <td class="data-cell ${rowClass}" id="pub_${tId}_${i}" contenteditable="true"></td>
-                            <td class="data-cell ${rowClass}" id="rm_${tId}_${i}" contenteditable="true"></td>
-                            <td class="data-cell font-bold text-gray-700 ${rowClass}" id="eis_${tId}_${i}" contenteditable="true"></td>
-                            <td class="data-cell bg-yellow-50" id="disc_${tId}_${i}" contenteditable="true" oninput="updateTable(${tId})">0</td>
-                            <td class="data-cell bg-yellow-50" id="inc_${tId}_${i}" contenteditable="true" oninput="updateTable(${tId})">0</td>
-                            <td class="data-cell ${rowClass}" id="slb_${tId}_${i}" contenteditable="true"></td>
-                            <td class="data-cell ${rowClass}" id="slr_${tId}_${i}" contenteditable="true"></td>
-                            <td class="data-cell ${rowClass}" id="sub_${tId}_${i}" contenteditable="true"></td>
-                            <td class="data-cell bg-yellow-50" id="subfac_${tId}_${i}" contenteditable="true" oninput="updateTable(${tId})">0</td>
-                            <td class="data-cell ${rowClass}" id="slw_${tId}_${i}" contenteditable="true"></td>
-                            <td class="data-cell ${rowClass}" id="slf_${tId}_${i}" contenteditable="true"></td>
-                            <td class="data-cell ${rowClass}" id="sls_${tId}_${i}" contenteditable="true"></td>
-                            <td class="data-cell font-bold bg-gray-100" id="mw_${tId}_${i}" contenteditable="true"></td>
-                            <td class="data-cell font-bold bg-gray-100" id="mf_${tId}_${i}" contenteditable="true"></td>
-                            <td class="data-cell font-bold bg-gray-100" id="ms_${tId}_${i}" contenteditable="true"></td>
-                        </tr>`;
-            }
-
-            html += `</tbody></table></div></div>`;
-
-            container.insertAdjacentHTML('beforeend', html);
-
-            const selLine = document.getElementById(`sel_line_${tId}`);
-            Object.keys(lineData).forEach(k => {
-                if (k !== 'CUSTOMER') {
-                    const opt = document.createElement('option');
-                    opt.value = k;
-                    opt.text = k;
-                    if (k === 'COSCO') opt.selected = true;
-                    selLine.appendChild(opt);
-                }
-            });
-
-            updateColor(tId);
-            updateTable(tId);
-        }
-
-        document.addEventListener('keydown', function(e) {
-            if(e.key === 'Enter' && e.target.tagName === 'TD' && e.target.isContentEditable) {
-                e.preventDefault(); 
-                const currentTd = e.target;
-                const currentRow = currentTd.parentElement;
-                
-                let cellIndex = Array.from(currentRow.children).indexOf(currentTd);
-                
-                let nextRow = currentRow.nextElementSibling;
-                while(nextRow && nextRow.children.length <= cellIndex) {
-                    nextRow = nextRow.nextElementSibling;
-                }
-                
-                if(nextRow) {
-                    const nextCell = nextRow.children[cellIndex];
-                    if(nextCell && nextCell.isContentEditable) {
-                        nextCell.focus();
-                        let range = document.createRange();
-                        range.selectNodeContents(nextCell);
-                        let sel = window.getSelection();
-                        sel.removeAllRanges();
-                        sel.addRange(range);
+            if (!exactMatchGroup) {
+                for (let j = 0; j < compiledMatchers.length; j++) {
+                    if (compiledMatchers[j].regex.test(commodityCol)) {
+                        assignedGroup = compiledMatchers[j].group;
+                        break;
                     }
                 }
             }
-        });
 
-        let activeCell = null;
-        const formulaInput = document.getElementById('formula-input');
-        
-        document.addEventListener('click', function(e) {
-            if (e.target.tagName === 'TD' && e.target.isContentEditable) {
-                if (activeCell) activeCell.classList.remove('selected');
-                activeCell = e.target;
-                activeCell.classList.add('selected');
-                formulaInput.value = e.target.innerText;
-            }
-        });
-
-        document.addEventListener('input', function(e) {
-            if (e.target.tagName === 'TD' && e.target.isContentEditable && activeCell === e.target) {
-                formulaInput.value = e.target.innerText;
-            }
-        });
-
-        formulaInput.addEventListener('input', function() {
-            if (activeCell) {
-                activeCell.innerText = this.value;
-                if (activeCell.id) {
-                    const parts = activeCell.id.split('_');
-                    if (parts.length === 3) updateTable(parts[1]);
+            if (assignedGroup === "OTHER") {
+                let uniqueKey = origDesc;
+                if (!otherItemsLog[uniqueKey]) {
+                    otherItemsLog[uniqueKey] = { cargo: origDesc, comm: origDesc, teus: 0 };
                 }
+                otherItemsLog[uniqueKey].teus += teuValue;
             }
+
+            if (!pivotData[assignedGroup][monthKey]) pivotData[assignedGroup][monthKey] = 0;
+            pivotData[assignedGroup][monthKey] += teuValue;
         });
 
-        function formatText(command) {
-            document.execCommand(command, false, null);
-            if (activeCell) activeCell.focus();
+        renderGenericMatrixTable("Commodity Group", allCommodities, Array.from(uniqueMonths).sort(), pivotData, "Commodity_TEU_Summary", true);
+    }
+
+    function buildPartyWiseReport(rows, config, reportField, rowHeader, titleSuffix) {
+        let matrixData = {};
+        let uniqueMonths = new Set();
+        let rowNames = new Set();
+        let minDate = null;
+        let maxDate = null;
+
+        rows.forEach(row => {
+            let monthRaw = normalizeText(row.GATE_OUT_DATE_MMMAG);
+            if (!monthRaw || monthRaw === "#N/A") return;
+
+            let monthKey = row._gateOutMonthKey || extractMonthKeyFromValue(monthRaw);
+            if (!monthKey || shouldIgnoreMonth(monthKey)) return;
+
+            let rowName = normalizeText(row[reportField]);
+            if (!rowName || rowName === "#N/A") return;
+
+            let teus = parseNumericValue(row[config.teusField]);
+            if (teus <= 0) return;
+
+            let parsedDate = row._gateOutParsedDate || parseDateStr(monthRaw);
+            if (parsedDate && !isNaN(parsedDate)) {
+                if (!minDate || parsedDate < minDate) minDate = parsedDate;
+                if (!maxDate || parsedDate > maxDate) maxDate = parsedDate;
+            }
+
+            uniqueMonths.add(monthKey);
+            rowNames.add(rowName);
+
+            if (!matrixData[rowName]) matrixData[rowName] = {};
+            if (!matrixData[rowName][monthKey]) matrixData[rowName][monthKey] = 0;
+            matrixData[rowName][monthKey] += teus;
+        });
+
+        if (minDate && maxDate) {
+            document.getElementById('dateRangeHeader').innerText = `${config.label} ${rowHeader} Wise Report data range: ${formatDateStandard(minDate)} to ${formatDateStandard(maxDate)}`;
+        } else {
+            document.getElementById('dateRangeHeader').innerText = `${config.label} ${rowHeader} Wise Report loaded`;
         }
 
-        function exportToExcelXLSX() {
-            const wb = XLSX.utils.book_new();
+        renderGenericMatrixTable(rowHeader, Array.from(rowNames).sort(), Array.from(uniqueMonths).sort(), matrixData, titleSuffix, false);
+    }
 
-            function rgbToHex(rgbStr) {
-                if (!rgbStr || rgbStr === 'transparent' || rgbStr === 'rgba(0, 0, 0, 0)') return null;
-                const match = rgbStr.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-                if (match) {
-                    return [match[1], match[2], match[3]]
-                        .map(x => parseInt(x).toString(16).padStart(2, '0'))
-                        .join('').toUpperCase();
-                }
-                const hexMatch = rgbStr.match(/#?([a-f\d]{6}|[a-f\d]{3})/i);
-                if (hexMatch) {
-                    let hex = hexMatch[1];
-                    return hex.length === 3 ? hex.split('').map(h => h + h).join('') : hex;
-                }
-                return null;
+    function buildImportShippingLineWiseReport(rows) {
+        let matrixData = {};
+        let uniqueMonths = new Set();
+        let rowNames = new Set();
+        let minDate = null;
+        let maxDate = null;
+
+        rows.forEach(row => {
+            let monthKey = row._monthKey || "Unknown Date";
+            if (shouldIgnoreMonth(monthKey)) return;
+
+            let lineName = normalizeImportLineName(row.LINE);
+            if (!lineName) return;
+
+            let teus = parseNumericValue(row.TEUS);
+            if (teus <= 0) return;
+
+            let parsedDate = row._parsedDate || parseDateStr(row.UNLOADING_DATE_TIME);
+            if (parsedDate && !isNaN(parsedDate)) {
+                if (!minDate || parsedDate < minDate) minDate = parsedDate;
+                if (!maxDate || parsedDate > maxDate) maxDate = parsedDate;
             }
 
-            let globalMaxCol = 0;
+            uniqueMonths.add(monthKey);
+            rowNames.add(lineName);
 
-            // Helper: Append one HTML table to worksheet with colspan & styling support
-            function appendTableToSheet(ws, tableEl, startRow, isSmaller = false) {
-                let rowIdx = startRow;
-                const trs = tableEl.querySelectorAll('tr');
+            if (!matrixData[lineName]) matrixData[lineName] = {};
+            if (!matrixData[lineName][monthKey]) matrixData[lineName][monthKey] = 0;
+            matrixData[lineName][monthKey] += teus;
+        });
 
-                if (!ws['!merges']) ws['!merges'] = [];
+        if (minDate && maxDate) {
+            document.getElementById('dateRangeHeader').innerText = `Import Shipping Line Wise Report data range: ${formatDateStandard(minDate)} to ${formatDateStandard(maxDate)}`;
+        } else {
+            document.getElementById('dateRangeHeader').innerText = 'Import Shipping Line Wise Report loaded';
+        }
 
-                trs.forEach(tr => {
-                    let colIdx = 0;
-                    const tds = tr.querySelectorAll('td, th');
+        renderGenericMatrixTable("Shipping Line", Array.from(rowNames).sort(), Array.from(uniqueMonths).sort(), matrixData, "Shipping_Line_Wise_Report", false);
+    }
 
-                    tds.forEach(td => {
-                        // Skip columns occupied by previous rowspans/colspans
-                        while (ws[XLSX.utils.encode_cell({ c: colIdx, r: rowIdx })]) {
-                            colIdx++;
-                        }
+    function buildExportLoadedReport(rows) {
+        let totalsByMonth = {};
+        let uniqueMonths = new Set();
 
-                        // Check if it's a select element inside
-                        let text = td.innerText.trim();
-                        const selectEl = td.querySelector('select');
-                        if (selectEl) {
-                            text = selectEl.options[selectEl.selectedIndex].text;
-                        }
+        rows.forEach(row => {
+            let monthKey = row._monthKey || "Unknown Date";
+            if (shouldIgnoreMonth(monthKey)) return;
 
-                        const cellRef = XLSX.utils.encode_cell({ c: colIdx, r: rowIdx });
-                        ws[cellRef] = { v: text, t: 's' };
+            let teus = parseNumericValue(row.TEUS);
+            if (teus <= 0) return;
 
-                        const style = {};
-                        const compStyle = window.getComputedStyle(td);
+            let sizeBucket = getSizeBucket(row.SIZE);
+            if (!totalsByMonth[monthKey]) totalsByMonth[monthKey] = { c20: 0, c40: 0, teus: 0 };
 
-                        // Set base font size (IsSmaller parameter passed true for 2nd table)
-                        style.font = { sz: isSmaller ? 9 : 11 };
+            if (sizeBucket === "20") totalsByMonth[monthKey].c20 += 1;
+            if (sizeBucket === "40") totalsByMonth[monthKey].c40 += 1;
+            totalsByMonth[monthKey].teus += teus;
+            uniqueMonths.add(monthKey);
+        });
 
-                        // Background color (Handling Tailwind classes through ComputedStyle)
-                        const bgColor = td.style.backgroundColor || compStyle.backgroundColor;
-                        const hexBg = rgbToHex(bgColor);
-                        if (hexBg && hexBg !== 'FFFFFF' && hexBg !== '000000') {
-                            style.fill = { fgColor: { rgb: hexBg } };
-                        }
+        document.getElementById('dateRangeHeader').innerText = 'Export Volumes Handled (EXPORT Loaded)';
+        renderExportLoadedTable(Array.from(uniqueMonths).sort(), totalsByMonth, "Volumes_Handled_EXPORT_Loaded");
+    }
 
-                        // Text color (Allow white color FFFFFF for title block)
-                        const colorStr = td.style.color || compStyle.color;
-                        const hexColor = rgbToHex(colorStr);
-                        if (hexColor && hexColor !== '000000' && (td.style.color || td.classList.contains('text-red-600') || td.classList.contains('text-blue-900') || hexColor === 'FFFFFF')) {
-                            style.font.color = { rgb: hexColor };
-                        }
+    function buildExportMscNonMscReport(rows) {
+        let totalsByMonth = {};
+        let uniqueMonths = new Set();
 
-                        // Bold / Italic
-                        const fw = td.style.fontWeight || compStyle.fontWeight;
-                        const isBold = (fw === 'bold' || fw === '700' || fw === 'bolder' || parseInt(fw, 10) >= 700 || td.classList.contains('font-bold'));
-                        if (isBold) style.font.bold = true;
+        rows.forEach(row => {
+            let monthKey = row._monthKey || "Unknown Date";
+            if (shouldIgnoreMonth(monthKey)) return;
 
-                        if (td.style.fontStyle === 'italic' || compStyle.fontStyle === 'italic') {
-                            style.font.italic = true;
-                        }
+            let teus = parseNumericValue(row.TEUS);
+            if (teus <= 0) return;
 
-                        // Title cell specific sizing (Thoda highlight ke liye 14sz)
-                        if (td.classList.contains('title-cell')) {
-                            style.font.sz = 14;
-                        }
+            let sizeBucket = getSizeBucket(row.SIZE);
+            let mscValue = normalizeKey(row.MSC_NON_MSC);
+            let isMsc = mscValue === 'MSC' || mscValue === 'MSC LINE';
+            if (!totalsByMonth[monthKey]) totalsByMonth[monthKey] = { m20: 0, m40: 0, mTeus: 0, n20: 0, n40: 0, nTeus: 0, totalTeus: 0 };
 
-                        // Alignment
-                        const align = td.style.textAlign || compStyle.textAlign || '';
-                        if (align === 'center' || td.classList.contains('text-center') || td.classList.contains('data-cell')) {
-                            style.alignment = { horizontal: 'center', vertical: 'center', wrapText: true };
-                        } else if (align === 'right' || td.classList.contains('text-right')) {
-                            style.alignment = { horizontal: 'right', vertical: 'center', wrapText: true };
-                        } else {
-                            style.alignment = { vertical: 'center', wrapText: true };
-                        }
+            if (isMsc) {
+                if (sizeBucket === "20") totalsByMonth[monthKey].m20 += 1;
+                if (sizeBucket === "40") totalsByMonth[monthKey].m40 += 1;
+                totalsByMonth[monthKey].mTeus += teus;
+            } else {
+                if (sizeBucket === "20") totalsByMonth[monthKey].n20 += 1;
+                if (sizeBucket === "40") totalsByMonth[monthKey].n40 += 1;
+                totalsByMonth[monthKey].nTeus += teus;
+            }
 
-                        // Borders
-                        style.border = {
-                            top:    { style: 'thin', color: { rgb: '888888' } },
-                            bottom: { style: 'thin', color: { rgb: '888888' } },
-                            left:   { style: 'thin', color: { rgb: '888888' } },
-                            right:  { style: 'thin', color: { rgb: '888888' } }
-                        };
+            totalsByMonth[monthKey].totalTeus += teus;
+            uniqueMonths.add(monthKey);
+        });
 
-                        if (Object.keys(style).length > 0) {
-                            ws[cellRef].s = style;
-                        }
+        document.getElementById('dateRangeHeader').innerText = 'Export MSC / NON MSC';
+        renderExportMscNonMscTable(Array.from(uniqueMonths).sort(), totalsByMonth, "Export_MSC_NON_MSC");
+    }
 
-                        const colspan = parseInt(td.getAttribute('colspan') || '1', 10);
-                        const rowspan = parseInt(td.getAttribute('rowspan') || '1', 10);
+    function buildExportKilaraipurReport(rows) {
+        let totalsByMonth = {};
+        let uniqueMonths = new Set();
+        const kilaraipurModes = new Set(['WH/CL', 'SELF SEAL', 'DSO', 'WH-STUFF', 'LCL WH STUFF']);
 
-                        if (colspan > 1 || rowspan > 1) {
-                            ws['!merges'].push({
-                                s: { r: rowIdx, c: colIdx },
-                                e: { r: rowIdx + rowspan - 1, c: colIdx + colspan - 1 }
-                            });
+        rows.forEach(row => {
+            let monthKey = row._monthKey || "Unknown Date";
+            if (shouldIgnoreMonth(monthKey)) return;
 
-                            // Fill merged cells with empty values and styling so borders render perfectly
-                            for (let rr = 0; rr < rowspan; rr++) {
-                                for (let cc = 0; cc < colspan; cc++) {
-                                    if (rr === 0 && cc === 0) continue;
-                                    const emptyCellRef = XLSX.utils.encode_cell({ c: colIdx + cc, r: rowIdx + rr });
-                                    ws[emptyCellRef] = { v: '', t: 's', s: style };
-                                }
-                            }
-                        }
+            let teus = parseNumericValue(row.TEUS);
+            if (teus <= 0) return;
 
-                        if (colIdx + colspan - 1 > globalMaxCol) {
-                            globalMaxCol = colIdx + colspan - 1;
-                        }
+            let mode = normalizeKey(row.MODE);
+            let isKilaraipur = kilaraipurModes.has(mode);
 
-                        colIdx += colspan;
-                    });
+            if (!totalsByMonth[monthKey]) totalsByMonth[monthKey] = { kTeus: 0, oTeus: 0, totalTeus: 0 };
+            if (isKilaraipur) totalsByMonth[monthKey].kTeus += teus;
+            else totalsByMonth[monthKey].oTeus += teus;
+            totalsByMonth[monthKey].totalTeus += teus;
+            uniqueMonths.add(monthKey);
+        });
 
-                    rowIdx++;
+        document.getElementById('dateRangeHeader').innerText = 'EXPORTS ICD Kilaraipur / OTHER CFS';
+        renderKilaraipurTable(Array.from(uniqueMonths).sort(), totalsByMonth, "ICD_Kilaraipur_Other_CFS");
+    }
+
+    function buildExportPartyWiseReport(rows, fieldName, rowHeader, titleSuffix, heading, tableClass = "") {
+        let matrixData = {};
+        let uniqueMonths = new Set();
+        let rowNames = new Set();
+
+        rows.forEach(row => {
+            let monthKey = row._monthKey || "Unknown Date";
+            if (shouldIgnoreMonth(monthKey)) return;
+
+            let rowName = normalizeText(row[fieldName]);
+            if (!rowName || rowName === "#N/A") return;
+
+            let teus = parseNumericValue(row.TEUS);
+            if (teus <= 0) return;
+
+            if (!matrixData[rowName]) matrixData[rowName] = {};
+            if (!matrixData[rowName][monthKey]) matrixData[rowName][monthKey] = 0;
+            matrixData[rowName][monthKey] += teus;
+
+            rowNames.add(rowName);
+            uniqueMonths.add(monthKey);
+        });
+
+        document.getElementById('dateRangeHeader').innerText = heading;
+        renderGenericMatrixTable(rowHeader, Array.from(rowNames).sort(), Array.from(uniqueMonths).sort(), matrixData, titleSuffix, false, tableClass);
+    }
+
+    function buildVolumesHandledReport(rows, matcher, titleSuffix, labels = {}) {
+        let totalsByMonth = {};
+        let uniqueMonths = new Set();
+
+        rows.forEach(row => {
+            let monthKey = row._monthKey || "Unknown Date";
+            if (shouldIgnoreMonth(monthKey)) return;
+
+            let teus = parseNumericValue(row.TEUS);
+            if (teus <= 0) return;
+
+            let sizeBucket = getSizeBucket(row.SIZE);
+            let isPrimary = matcher(row);
+
+            if (!totalsByMonth[monthKey]) {
+                totalsByMonth[monthKey] = { htpl20: 0, htpl40: 0, htplTeus: 0, others20: 0, others40: 0, othersTeus: 0, grandTeus: 0 };
+            }
+
+            let bucket = totalsByMonth[monthKey];
+            uniqueMonths.add(monthKey);
+
+            if (isPrimary) {
+                if (sizeBucket === "20") bucket.htpl20 += 1;
+                if (sizeBucket === "40") bucket.htpl40 += 1;
+                bucket.htplTeus += teus;
+            } else {
+                if (sizeBucket === "20") bucket.others20 += 1;
+                if (sizeBucket === "40") bucket.others40 += 1;
+                bucket.othersTeus += teus;
+            }
+
+            bucket.grandTeus += teus;
+        });
+
+        renderVolumesHandledTable(Array.from(uniqueMonths).sort(), totalsByMonth, titleSuffix, labels);
+    }
+
+    function updateDateRangeHeader(rows, config, reportLabel) {
+        let minDate = null;
+        let maxDate = null;
+
+        rows.forEach(row => {
+            let parsedDate = row._parsedDate || parseDateStr(row[config.monthField]);
+            if (!parsedDate || isNaN(parsedDate)) return;
+            if (!minDate || parsedDate < minDate) minDate = parsedDate;
+            if (!maxDate || parsedDate > maxDate) maxDate = parsedDate;
+        });
+
+        if (minDate && maxDate) {
+            document.getElementById('dateRangeHeader').innerText = `${config.label} ${reportLabel} data range: ${formatDateStandard(minDate)} to ${formatDateStandard(maxDate)}`;
+        } else {
+            document.getElementById('dateRangeHeader').innerText = `${config.label} ${reportLabel} loaded`;
+        }
+    }
+
+    function renderSelectedReport(reportKey) {
+        if (!currentRows.length || !currentConfig) return;
+
+        activeReportKey = reportKey;
+        renderReportButtons(activeReportType);
+
+        if (reportKey === 'commodity') {
+            let commodityLabel = activeReportType === 'import' ? "Commodity Report- Imports" : "Commodity Report-Exports";
+            updateDateRangeHeader(currentRows, currentConfig, commodityLabel);
+            buildCommodityReport(currentRows, currentConfig);
+            return;
+        }
+
+        if (reportKey === 'importerWise') {
+            buildPartyWiseReport(currentRows, currentConfig, 'SHIPPER_AS_PER_MMMAG', 'Importer', 'Importer_Wise_Report');
+            return;
+        }
+
+        if (reportKey === 'chaWise') {
+            buildPartyWiseReport(currentRows, currentConfig, 'CHA_AS_PER_MMMAG', 'CHA', 'CHA_Wise_Report');
+            return;
+        }
+
+        if (reportKey === 'shippingLineWise') {
+            buildImportShippingLineWiseReport(currentRows);
+            return;
+        }
+
+        if (reportKey === 'volumesCarrier') {
+            document.getElementById('dateRangeHeader').innerText = 'Import Volumes Handled (IMPORT Loaded)';
+            buildVolumesHandledReport(currentRows, row => normalizeKey(row.CARRIER) === 'HTPL', 'Volumes_Handled_IMPORT_Loaded', {
+                primary20: '20',
+                primary40: '40',
+                primaryTeus: 'TEUs',
+                primaryPct: '%',
+                secondary20: 'Boxtrans 20',
+                secondary40: 'Boxtrans 40',
+                secondaryTeus: 'Boxtrans TEUs',
+                secondaryPct: 'Boxtrans %'
+            });
+            return;
+        }
+
+        if (reportKey === 'volumesLine') {
+            document.getElementById('dateRangeHeader').innerText = 'Volumes Handled (MSC / OTHERS)-Imports';
+            buildVolumesHandledReport(currentRows, row => normalizeKey(row.LINE) === 'MSC', 'Volumes_Handled_MSC_Others', {
+                primary20: '20',
+                primary40: '40',
+                primaryTeus: 'TEUs',
+                primaryPct: '%',
+                secondary20: 'OTHERS 20',
+                secondary40: 'OTHERS 40',
+                secondaryTeus: 'TEUs',
+                secondaryPct: 'OTHERS %'
+            });
+            return;
+        }
+
+        if (reportKey === 'volumesPod') {
+            document.getElementById('dateRangeHeader').innerText = 'Volumes Handled (KILARAIPUR/ OTHERS CFS)-Imports';
+            buildVolumesHandledReport(currentRows, row => ['INQRH06', 'INQRH6'].includes(normalizeKey(row.POD)), 'Volumes_Handled_INQRH06_Others', {
+                primary20: '20',
+                primary40: '40',
+                primaryTeus: 'TEUs',
+                primaryPct: '%',
+                secondary20: '20',
+                secondary40: '40',
+                secondaryTeus: 'TEUs',
+                secondaryPct: 'OTHER CFS %'
+            });
+            return;
+        }
+
+        if (reportKey === 'exportLoaded') {
+            buildExportLoadedReport(currentRows);
+            return;
+        }
+
+        if (reportKey === 'exportMscNonMsc') {
+            buildExportMscNonMscReport(currentRows);
+            return;
+        }
+
+        if (reportKey === 'exportKilaraipur') {
+            buildExportKilaraipurReport(currentRows);
+            return;
+        }
+
+        if (reportKey === 'exportShippingLineWise') {
+            buildExportPartyWiseReport(currentRows, 'SHIPPING_LINE', 'Shipping Line', 'Export_Shipping_Line_Wise', 'SHIPPING LINE WISE (EXPORT LOADED)');
+            return;
+        }
+
+        if (reportKey === 'topExporters') {
+            buildExportPartyWiseReport(currentRows, 'SHIPPER_NAME', 'Exporter', 'Top_Exporters', 'Top Exporters', 'narrow-first-col');
+            return;
+        }
+
+        if (reportKey === 'topChaExports') {
+            buildExportPartyWiseReport(currentRows, 'CHA', 'CHA', 'Top_CHA_EXPORTS', 'Top CHA EXPORTS');
+        }
+    }
+
+    function sanitizeWorksheetName(name, usedNames) {
+        let cleaned = name.replace(/[\\\/\?\*\[\]:]/g, ' ').replace(/\s+/g, ' ').trim();
+        if (!cleaned) cleaned = 'Report';
+        cleaned = cleaned.slice(0, 31);
+
+        let base = cleaned;
+        let counter = 1;
+        while (usedNames.has(cleaned)) {
+            let suffix = ` ${counter}`;
+            cleaned = base.slice(0, Math.max(1, 31 - suffix.length)) + suffix;
+            counter++;
+        }
+        usedNames.add(cleaned);
+        return cleaned;
+    }
+
+    function getWorkbookTheme(reportType) {
+        return reportType === 'import'
+            ? { header: 'FFF9C4', grand: 'FFF176', firstCol: 'FFFDE7' }
+            : { header: 'D9F2D9', grand: 'B7E1B0', firstCol: 'EDF7ED' };
+    }
+
+    function styleWorksheet(worksheet, rowCount, colCount, reportType) {
+        let theme = getWorkbookTheme(reportType);
+        let border = {
+            top: { style: 'thin', color: { argb: 'FFBDBDBD' } },
+            left: { style: 'thin', color: { argb: 'FFBDBDBD' } },
+            bottom: { style: 'thin', color: { argb: 'FFBDBDBD' } },
+            right: { style: 'thin', color: { argb: 'FFBDBDBD' } }
+        };
+
+        for (let rowIndex = 1; rowIndex <= rowCount; rowIndex++) {
+            for (let colIndex = 1; colIndex <= colCount; colIndex++) {
+                let cell = worksheet.getRow(rowIndex).getCell(colIndex);
+                let isTitleRow = rowIndex === 1;
+                let isBlankSpacer = rowIndex === 2;
+                let tableHeaderRow = rowIndex === 3;
+                let tableGrandRow = rowIndex === rowCount;
+                let isTableArea = rowIndex >= 3;
+
+                if (isTitleRow) {
+                    cell.font = { name: 'Calibri', size: 13, bold: true };
+                    cell.alignment = { vertical: 'middle', horizontal: 'left' };
+                    continue;
+                }
+
+                if (isBlankSpacer) {
+                    continue;
+                }
+
+                if (isTableArea) {
+                    cell.border = border;
+                    cell.alignment = { vertical: 'middle', horizontal: colIndex === 1 ? 'left' : 'center' };
+                    cell.font = { name: 'Calibri', size: 11 };
+
+                    if (tableHeaderRow) {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: theme.header } };
+                        cell.font = { name: 'Calibri', size: 11, bold: true };
+                    } else if (tableGrandRow) {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: theme.grand } };
+                        cell.font = { name: 'Calibri', size: 11, bold: true };
+                    } else if (colIndex === 1) {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: theme.firstCol } };
+                        cell.font = { name: 'Calibri', size: 11, bold: true };
+                    }
+
+                    if (String(cell.value || '').includes('%')) {
+                        cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFC0392B' } };
+                    }
+                }
+            }
+        }
+
+        worksheet.views = [{ state: 'frozen', xSplit: 1, ySplit: 3 }];
+    }
+
+    function styleReportBlock(worksheet, startRow, tableRowCount, colCount, reportType) {
+        let theme = getWorkbookTheme(reportType);
+        let border = {
+            top: { style: 'thin', color: { argb: 'FFBDBDBD' } },
+            left: { style: 'thin', color: { argb: 'FFBDBDBD' } },
+            bottom: { style: 'thin', color: { argb: 'FFBDBDBD' } },
+            right: { style: 'thin', color: { argb: 'FFBDBDBD' } }
+        };
+
+        let titleRow = startRow;
+        let spacerRow = startRow + 1;
+        let headerRow = startRow + 2;
+        let grandRow = startRow + 1 + tableRowCount;
+
+        for (let rowIndex = titleRow; rowIndex <= grandRow; rowIndex++) {
+            for (let colIndex = 1; colIndex <= colCount; colIndex++) {
+                let cell = worksheet.getRow(rowIndex).getCell(colIndex);
+
+                if (rowIndex === titleRow) {
+                    cell.font = { name: 'Calibri', size: 13, bold: true };
+                    cell.alignment = { vertical: 'middle', horizontal: 'left' };
+                    continue;
+                }
+
+                if (rowIndex === spacerRow) continue;
+
+                cell.border = border;
+                cell.alignment = { vertical: 'middle', horizontal: colIndex === 1 ? 'left' : 'center' };
+                cell.font = { name: 'Calibri', size: 11 };
+
+                if (rowIndex === headerRow) {
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: theme.header } };
+                    cell.font = { name: 'Calibri', size: 11, bold: true };
+                } else if (rowIndex === grandRow) {
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: theme.grand } };
+                    cell.font = { name: 'Calibri', size: 11, bold: true };
+                } else if (colIndex === 1) {
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: theme.firstCol } };
+                    cell.font = { name: 'Calibri', size: 11, bold: true };
+                }
+
+                if (String(cell.value || '').includes('%')) {
+                    cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFC0392B' } };
+                }
+            }
+        }
+    }
+
+    function captureCurrentTableRows() {
+        let table = document.getElementById('summaryTable');
+        if (!table) return [];
+
+        return Array.from(table.querySelectorAll('tr')).map(tr =>
+            Array.from(tr.querySelectorAll('th,td')).map(cell => cell.innerText.trim() === '-' ? '' : cell.innerText.trim())
+        );
+    }
+
+    function setWorksheetColumns(worksheet, rows) {
+        let colCount = rows.reduce((max, row) => Math.max(max, row.length), 0);
+        for (let colIndex = 1; colIndex <= colCount; colIndex++) {
+            let maxLength = rows.reduce((max, row) => Math.max(max, String(row[colIndex - 1] || '').length), 0);
+            worksheet.getColumn(colIndex).width = colIndex === 1 ? Math.min(Math.max(maxLength + 2, 16), 28) : Math.min(Math.max(maxLength + 2, 10), 16);
+        }
+        return colCount;
+    }
+
+    function appendReportBlockToWorksheet(worksheet, reportLabel, tableRows, reportType) {
+        if (!tableRows.length) return null;
+
+        let startRow = worksheet.rowCount + 1;
+        worksheet.addRow([reportLabel]);
+        worksheet.addRow([]);
+        tableRows.forEach(row => worksheet.addRow(row));
+        worksheet.addRow([]);
+
+        let colCount = tableRows.reduce((max, row) => Math.max(max, row.length), 0);
+        if (colCount > 1) {
+            worksheet.mergeCells(startRow, 1, startRow, colCount);
+        }
+        styleReportBlock(worksheet, startRow, tableRows.length, colCount, reportType);
+        return { startRow, colCount };
+    }
+
+    async function downloadAllReports() {
+        if (!currentRows.length || !currentConfig) return;
+
+        let definitions = getDefinitionsForReportType(activeReportType);
+        let previousReportKey = activeReportKey;
+        let usedNames = new Set();
+        let workbook = new ExcelJS.Workbook();
+        workbook.creator = 'Codex';
+        workbook.created = new Date();
+
+        definitions.forEach(def => {
+            renderSelectedReport(def.key);
+            let table = document.getElementById('summaryTable');
+            if (!table) return;
+
+            let tableRows = Array.from(table.querySelectorAll('tr')).map(tr =>
+                Array.from(tr.querySelectorAll('th,td')).map(cell => cell.innerText.trim() === '-' ? '' : cell.innerText.trim())
+            );
+            let rows = [[def.label], [], ...tableRows];
+
+            let sheetName = sanitizeWorksheetName(def.label, usedNames);
+            let worksheet = workbook.addWorksheet(sheetName);
+            rows.forEach(row => worksheet.addRow(row));
+
+            let colCount = rows.reduce((max, row) => Math.max(max, row.length), 0);
+            for (let colIndex = 1; colIndex <= colCount; colIndex++) {
+                let maxLength = rows.reduce((max, row) => Math.max(max, String(row[colIndex - 1] || '').length), 0);
+                worksheet.getColumn(colIndex).width = colIndex === 1 ? Math.min(Math.max(maxLength + 2, 16), 28) : Math.min(Math.max(maxLength + 2, 10), 16);
+            }
+
+            if (colCount > 1) {
+                worksheet.mergeCells(1, 1, 1, colCount);
+            }
+
+            styleWorksheet(worksheet, rows.length, colCount, activeReportType);
+        });
+
+        renderSelectedReport(previousReportKey);
+
+        let buffer = await workbook.xlsx.writeBuffer();
+        let blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        let url = URL.createObjectURL(blob);
+        let link = document.createElement('a');
+        link.href = url;
+        link.download = `${reportConfigs[activeReportType].label}_All_Reports.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    async function downloadCombinedReports() {
+        if (!loadedDataCache.import.rows.length || !loadedDataCache.export.rows.length) return;
+
+        let workbook = new ExcelJS.Workbook();
+        workbook.creator = 'Codex';
+        workbook.created = new Date();
+        let usedNames = new Set();
+
+        let previousState = {
+            activeReportType,
+            activeReportKey,
+            currentRows,
+            currentConfig
+        };
+
+        const setActiveData = (reportType) => {
+            activeReportType = reportType;
+            currentRows = loadedDataCache[reportType].rows;
+            currentConfig = loadedDataCache[reportType].config;
+        };
+
+        const addSingleReportSheet = (reportType, reportKey, customTitle = null) => {
+            setActiveData(reportType);
+            let def = getDefinitionsForReportType(reportType).find(item => item.key === reportKey);
+            if (!def) return;
+
+            renderSelectedReport(reportKey);
+            let tableRows = captureCurrentTableRows();
+            if (!tableRows.length) return;
+
+            let reportTitle = customTitle || def.label;
+            let rows = [[reportTitle], [], ...tableRows];
+            let sheetName = sanitizeWorksheetName(reportTitle, usedNames);
+            let worksheet = workbook.addWorksheet(sheetName);
+            rows.forEach(row => worksheet.addRow(row));
+            let colCount = setWorksheetColumns(worksheet, rows);
+
+            if (colCount > 1) worksheet.mergeCells(1, 1, 1, colCount);
+            styleWorksheet(worksheet, rows.length, colCount, reportType);
+        };
+
+        const addCombinedSheet = (sheetTitle, pairs) => {
+            let sheetName = sanitizeWorksheetName(sheetTitle, usedNames);
+            let worksheet = workbook.addWorksheet(sheetName);
+            let combinedRows = [];
+
+            pairs.forEach(pair => {
+                setActiveData(pair.reportType);
+                let def = getDefinitionsForReportType(pair.reportType).find(item => item.key === pair.reportKey);
+                if (!def) return;
+
+                renderSelectedReport(pair.reportKey);
+                let tableRows = captureCurrentTableRows();
+                if (!tableRows.length) return;
+
+                let blockTitle = pair.customTitle || def.label;
+                appendReportBlockToWorksheet(worksheet, blockTitle, tableRows, pair.reportType);
+                combinedRows.push([blockTitle], [], ...tableRows, []);
+            });
+
+            if (!combinedRows.length) return;
+            let colCount = setWorksheetColumns(worksheet, combinedRows);
+            worksheet.views = [{ state: 'frozen', xSplit: 1, ySplit: 3 }];
+        };
+
+        addCombinedSheet('Volumes Handled IMPORT Export', [
+            { reportType: 'import', reportKey: 'volumesCarrier' },
+            { reportType: 'export', reportKey: 'exportLoaded' }
+        ]);
+
+        addCombinedSheet('Volumes Handled MSC & NON MSC', [
+            { reportType: 'import', reportKey: 'volumesLine' },
+            { reportType: 'export', reportKey: 'exportMscNonMsc' }
+        ]);
+
+        addCombinedSheet('Volumes Handled (KILARAIPUR OTHER)', [
+            { reportType: 'import', reportKey: 'volumesPod', customTitle: 'Volumes Handled (KILARAIPUR/ OTHERS CFS)-Imports' },
+            { reportType: 'export', reportKey: 'exportKilaraipur', customTitle: 'ICD Kilaraipur / Other CFS-Exports' }
+        ]);
+        addSingleReportSheet('import', 'shippingLineWise', 'Shipping Line Wise Report-Import');
+        addSingleReportSheet('export', 'exportShippingLineWise', 'Shipping Line Wise (EXPORT)');
+        addSingleReportSheet('import', 'commodity', 'Commodity Report- Imports');
+        addSingleReportSheet('export', 'commodity', 'Commodity Report-Exports');
+        addSingleReportSheet('import', 'importerWise', 'Importer Wise Report');
+        addSingleReportSheet('export', 'topExporters', 'Top Exporters');
+        addSingleReportSheet('import', 'chaWise', 'CHA Wise Report-Imports');
+        addSingleReportSheet('export', 'topChaExports', 'Top CHA EXPORTS');
+
+        activeReportType = previousState.activeReportType;
+        activeReportKey = previousState.activeReportKey;
+        currentRows = previousState.currentRows;
+        currentConfig = previousState.currentConfig;
+        renderReportButtons(activeReportType);
+        renderSelectedReport(activeReportKey);
+
+        let buffer = await workbook.xlsx.writeBuffer();
+        let blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        let url = URL.createObjectURL(blob);
+        let link = document.createElement('a');
+        link.href = url;
+        link.download = `Import_Export_Combine_Reports.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    function resetReportState(reportType) {
+        activeReportType = reportType;
+        activeReportKey = "commodity";
+        currentRows = [];
+        currentConfig = null;
+        activeDownloadName = "Commodity_TEU_Summary";
+        document.getElementById('loading').style.display = 'block';
+        showLoadingOverlay(`${reportConfigs[reportType].label} file selected`);
+        document.getElementById('output').innerHTML = '';
+        document.getElementById('downloadBtn').style.display = 'none';
+        document.getElementById('downloadAllBtn').style.display = 'none';
+        document.getElementById('downloadCombinedBtn').style.display = loadedDataCache.import.rows.length && loadedDataCache.export.rows.length ? 'block' : 'none';
+        document.getElementById('downloadOtherBtn').style.display = 'none';
+        document.getElementById('reportToolbar').style.display = 'none';
+        document.getElementById('dateRangeHeader').innerText = `${reportConfigs[reportType].label} report processing...`;
+        otherItemsLog = {};
+    }
+
+    function loadWorkbookFile(file, reportType) {
+        if (!file) return;
+
+        let config = reportConfigs[reportType];
+        resetReportState(reportType);
+
+        let reader = new FileReader();
+
+        reader.onprogress = function(progressEvent) {
+            if (progressEvent.lengthComputable) {
+                let percent = (progressEvent.loaded / progressEvent.total) * 70;
+                updateLoadingProgress(percent, 'Reading file...');
+            }
+        };
+
+        reader.onload = function(loadEvent) {
+            try {
+                animateLoadingTo(85, 'Parsing workbook...');
+                let workbook = XLSX.read(loadEvent.target.result, {
+                    type: 'array',
+                    cellDates: true
                 });
 
-                return rowIdx + 2; // spacing after each table
+                let firstSheetName = workbook.SheetNames[0];
+                let worksheet = workbook.Sheets[firstSheetName];
+                let parsedRows = mapWorksheetRows(worksheet, config);
+
+                currentRows = parsedRows;
+                currentConfig = config;
+                loadedDataCache[reportType] = { rows: parsedRows, config };
+                activeReportKey = "commodity";
+                animateLoadingTo(95, 'Generating reports...');
+                renderReportButtons(reportType);
+                renderSelectedReport('commodity');
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('downloadAllBtn').style.display = 'block';
+                document.getElementById('downloadCombinedBtn').style.display = loadedDataCache.import.rows.length && loadedDataCache.export.rows.length ? 'block' : 'none';
+                hideLoadingOverlay();
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('output').innerHTML = `<p style="color:#c0392b;font-weight:bold;">Unable to read the ${config.label.toLowerCase()} Excel file. Please upload a valid .xlsx or .xlsm file.</p>`;
+                document.getElementById('dateRangeHeader').innerText = `${config.label} report failed to load`;
+                hideLoadingOverlay();
             }
+        };
 
-            // Worksheet 1: Approval Form
-            const ws1 = {}; // Initialize properly as empty object
-            let currentRow = 0;
+        reader.readAsArrayBuffer(file);
+    }
 
-            const topTable = document.getElementById('top_info_table');
-            if (topTable) {
-                // Pass false for normal size
-                currentRow = appendTableToSheet(ws1, topTable, currentRow, false);
-            }
+    document.getElementById('importFileInput').addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        loadWorkbookFile(file, 'import');
+    });
 
-            const tariffTables = document.querySelectorAll('#dynamic_tables_container table.data-table');
-            tariffTables.forEach(tbl => {
-                // Pass true for smaller size (2nd table)
-                currentRow = appendTableToSheet(ws1, tbl, currentRow, true);
-            });
+    document.getElementById('exportFileInput').addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        loadWorkbookFile(file, 'export');
+    });
 
-            // CRITICAL FIX: Set !ref range so SheetJS knows the sheet is not empty
-            ws1['!ref'] = XLSX.utils.encode_range({
-                s: { c: 0, r: 0 },
-                e: { c: Math.max(globalMaxCol, 15), r: currentRow }
-            });
+    function downloadReport() {
+        let table = document.getElementById("summaryTable");
+        let rows = table.querySelectorAll("tr");
+        let csvContent = [];
 
-            ws1['!cols'] = Array(Math.max(globalMaxCol + 1, 16)).fill({ wch: 14 });
-
-            XLSX.utils.book_append_sheet(wb, ws1, "Approval Form");
-
-            // Worksheet 2: Shippers Name
-            const shippersCell = document.getElementById('shippers_content_box');
-            const shippersLines = shippersCell ? shippersCell.innerText.trim().split('\n').filter(l => l.trim()) : [];
-            const shippersData = [
-                ["Shippers Name"],
-                ...shippersLines.map(name => [name])
-            ];
-            const ws2 = XLSX.utils.aoa_to_sheet(shippersData);
-
-            ws2['A1'].s = {
-                font: { bold: true, sz: 14 },
-                fill: { fgColor: { rgb: "FEF08A" } },
-                alignment: { horizontal: 'center', vertical: 'center' },
-                border: {
-                    top:    { style: 'medium', color: { rgb: '1E3A8A' } },
-                    bottom: { style: 'medium', color: { rgb: '1E3A8A' } },
-                    left:   { style: 'medium', color: { rgb: '1E3A8A' } },
-                    right:  { style: 'medium', color: { rgb: '1E3A8A' } }
-                }
-            };
-
-            for (let r = 1; r < shippersData.length; r++) {
-                const ref = XLSX.utils.encode_cell({ c: 0, r });
-                if (ws2[ref]) {
-                    ws2[ref].s = {
-                        alignment: { vertical: 'top', wrapText: true },
-                        border: {
-                            top:    { style: 'thin', color: { rgb: '1E3A8A' } },
-                            bottom: { style: 'thin', color: { rgb: '1E3A8A' } },
-                            left:   { style: 'medium', color: { rgb: '1E3A8A' } },
-                            right:  { style: 'medium', color: { rgb: '1E3A8A' } }
-                        }
-                    };
-                }
-            }
-
-            ws2['!cols'] = [{ wch: 60 }];
-
-            XLSX.utils.book_append_sheet(wb, ws2, "Shippers Name");
-
-            XLSX.writeFile(wb, "Cost_Approval_Format.xlsx");
+        let headerText = document.getElementById('dateRangeHeader').innerText;
+        if (headerText) {
+            csvContent.push('"' + headerText + '"');
+            csvContent.push(""); 
         }
-    </script>
+
+        for (let i = 0; i < rows.length; i++) {
+            let row = [], cols = rows[i].querySelectorAll("td, th");
+            for (let j = 0; j < cols.length; j++) {
+                let cellData = cols[j].innerText.trim();
+                if (cellData === '-') cellData = '0'; 
+                row.push('"' + cellData + '"');
+            }
+            csvContent.push(row.join(","));
+        }
+
+        let csvString = csvContent.join("\n");
+        let blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+        
+        let link = document.createElement("a");
+        let url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `${reportConfigs[activeReportType].label}_${activeDownloadName}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function downloadOtherReport() {
+        let otherArray = Object.values(otherItemsLog);
+        otherArray.sort((a, b) => b.teus - a.teus);
+
+        let csvContent = [];
+        csvContent.push('"Total TEUs","COMMODITY"');
+
+        otherArray.forEach(item => {
+            let cleanComm = item.comm.replace(/"/g, '""');
+            csvContent.push(`"${item.teus}","${cleanComm}"`);
+        });
+
+        let csvString = csvContent.join("\n");
+        let blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+        
+        let link = document.createElement("a");
+        let url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `${reportConfigs[activeReportType].label}_Uncategorized_OTHER_Items.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+
 </body>
 </html>
